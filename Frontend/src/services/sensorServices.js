@@ -10,11 +10,8 @@ export const sensorService = {
       console.error("Error en sensorService:", error);
       throw error;
     }
-  }
-};
-
-export const senalService = {
- async getSenal(tipo) {
+  },
+  async getSenal(tipo) {
     try {
       const respuesta = await fetch(`${API_BASE_URL}/senal/${tipo}`);;
       if (!respuesta.ok) throw new Error('Error en la red');

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { sensorService, senalService } from '../services/sensorServices'
+import { sensorService} from '../services/sensorServices'
 import StatusCard from '../components/StatusCard.vue'
 import GraficaCard from '../components/GraficaCard.vue'
 import SenalCard from '../components/SenalCard.vue'

@@ -9,6 +9,6 @@ import Dashboard from './views/Dashboard.vue'
 </template>
 
 <style>
-/* Estilos globales */
+/* Estilo Global */
 body { margin: 0; background-color: #f0f2f5; }
 </style>

@@ -69,121 +69,100 @@ onUnmounted(() => clearInterval(intervalo))
     <header class="dashboard-header">
       <h1>Análisis de Vibraciones P-101</h1>
       <span class="status-tag" :style="{ backgroundColor: colorActual }">
-        Estado: {{ datos.estado }}
+        {{ datos.estado }}
       </span>
     </header>
 
-    <main class="dashboard-layout">
-      <section class="main-content">
-        <div class="card-container">
-          <SenalCard 
-            :valor="datos.valor" 
-            :estado="datos.estado" 
-            :tipoActual="tipoDeOnda"
-            @cambiarTipo="handleCambioTipo" 
-          />
-        </div>
-
-        <div class="card-container">
-          <h3>Forma de Onda (Tiempo Real)</h3>
-          <SenalGraficaCard 
-            :puntos="datos.datos_onda" 
-            :color="colorActual" 
-          />
-        </div>
-      </section>
-
-      <aside class="sidebar-charts">
+    <main class="dashboard-grid">
+      <div class="card status-zone">
         <StatusCard 
-          :valor="datosSensor.valor" 
-          :estado="datosSensor.estado" 
-          :unidad="datosSensor.unidad"
-        />
-        
-        <div class="trend-container">
-          <h3>Tendencia de Vibración</h3>
-          <GraficaCard 
-            :nuevoValor="datosSensor.valor" 
-            :color="colorActual"
-          />
-        </div>
-      </aside>
+        :valor="datosSensor.valor" 
+        :estado="datosSensor.estado" 
+        :unidad="datosSensor.unidad" />
+      </div>
+
+      <div class="card control-zone">
+        <SenalCard 
+        :valor="datos.valor" 
+        :estado="datos.estado" 
+        :tipoActual="tipoDeOnda" 
+        @cambiarTipo="handleCambioTipo" />
+      </div>
+
+      <div class="card trend-zone">
+        <h3>Tendencia (RMS)</h3>
+        <GraficaCard 
+        :nuevoValor="datosSensor.valor" 
+        :color="colorActual" />
+      </div>
+
+      <div class="card wave-zone">
+        <h3>Forma de Onda en Tiempo Real</h3>
+        <SenalGraficaCard 
+        :puntos="datos.datos_onda" 
+        :color="colorActual" />
+      </div>
     </main>
   </div>
 </template>
 
 <style scoped>
 .dashboard-wrapper {
-  background-color: #f4f7f9;
+  background-color: #f0f2f5;
   min-height: 100vh;
-  padding: 20px 40px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
+  font-family: sans-serif;
 }
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  border-bottom: 2px solid #ddd;
-  padding-bottom: 10px;
+  margin-bottom: 20px;
 }
 
-.dashboard-layout {
-  display: flex;
-  gap: 25px;
-  align-items: flex-start;
-}
-
-/* Columna principal (70% aprox) */
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+/* El motor del layout */
+.dashboard-grid {
+  display: grid;
+  /* Creamos 3 columnas iguales */
+  grid-template-columns: repeat(3, 1fr);
+  /* Espacio entre tarjetas */
   gap: 20px;
 }
 
-/* Columna lateral (30% aprox) */
-.sidebar-charts {
-  width: 380px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  position: sticky; /* Se queda fija al hacer scroll */
-  top: 20px;
-}
-
-.card-container, .trend-container {
+.card {
   background: white;
   border-radius: 12px;
   padding: 15px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden; /* Evita que las gráficas se salgan */
 }
 
-h3 {
-  margin-top: 0;
-  color: #34495e;
-  font-size: 1.1rem;
-  margin-bottom: 15px;
+/* Hacemos que la gráfica de onda ocupe las 3 columnas de abajo */
+.wave-zone {
+  grid-column: span 3; 
+  height: 450px; /* Le damos buena altura */
+}
+
+/* Ajustes para las gráficas pequeñas */
+.trend-zone {
+  height: 350px;
 }
 
 .status-tag {
-  padding: 6px 15px;
-  border-radius: 20px;
+  padding: 8px 16px;
+  border-radius: 8px;
   color: white;
   font-weight: bold;
-  text-transform: uppercase;
-  font-size: 0.8rem;
 }
 
-/* Responsive para pantallas pequeñas */
-@media (max-width: 1100px) {
-  .dashboard-layout {
-    flex-direction: column;
+/* RESPONSIVE: Si la pantalla es pequeña, todo a una columna */
+@media (max-width: 1000px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
   }
-  .sidebar-charts {
-    width: 100%;
-    position: static;
+  .wave-zone {
+    grid-column: span 1;
   }
 }
 </style>

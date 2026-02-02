@@ -45,7 +45,7 @@ const option = ref({
     type: 'value',
     name: 'mm/s',
     min: 0,
-    max: 15 // Ajustado a tu simulación
+    max: 3 // Ajustado a tu simulación
   },
   series: [{
     data: historial.value,

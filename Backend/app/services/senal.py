@@ -4,7 +4,7 @@ import time
 
 def generar_senal_especifica(tipo="sinusoidal"):
     # Parámetros base
-    fs = 1000  # Frecuencia de muestreo (1kHz)
+    fs = 10e3  # Frecuencia de muestreo (1kHz)
     t_espacio = np.linspace(0, 0.1, 100, endpoint=False) # Ventana de tiempo
     f_eje = 30  # Frecuencia de la señal (30 Hz)
     fase = 2 * np.pi * f_eje * time.time() # Fase dinámica para que la onda se mueva
@@ -22,7 +22,7 @@ def generar_senal_especifica(tipo="sinusoidal"):
         señal = 2.0 * signal.sawtooth(fase + 2 * np.pi * f_eje * t_espacio, width=0.5)
     
     else:
-        señal = np.zeros(100) # Por si envían un tipo que no existe
+        señal = np.zeros(1000) # Por si envían un tipo que no existe
 
     # Agregamos un poco de ruido para realismo
     ruido = np.random.normal(0, 0.2, len(señal))
@@ -31,9 +31,15 @@ def generar_senal_especifica(tipo="sinusoidal"):
     # Cálculo de métricas
     rms = np.sqrt(np.mean(señal_final**2))
     
+    # Determinamos estado según norma ISO 10816 (aprox)
+    estado = "Normal"
+    if rms > 7.1: estado = "Peligro"
+    elif rms > 4.5: estado = "Alerta"
+    
     return {
         "valor": round(float(rms), 2),
         "datos_onda": señal_final.tolist(), # Enviamos la lista para graficar
         "tipo": tipo,
+        "estado": estado,
         "unidad": "mm/s"
     }

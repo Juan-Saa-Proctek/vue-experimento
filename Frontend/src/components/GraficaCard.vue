@@ -26,7 +26,7 @@ watch(() => props.nuevoValor, (val) => {
   etiquetas.value.push(ahora)
 
   // Mantener solo los últimos 50 puntos (efecto scroll)
-  if (historial.value.length > 50) {
+  if (historial.value.length > 100) {
     historial.value.shift()
     etiquetas.value.shift()
   }

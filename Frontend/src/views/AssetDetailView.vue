@@ -28,6 +28,7 @@
         :class="{ active: activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
+        <component :is="tab.icon" v-if="tab.icon" :size="15" />
         {{ tab.label }}
       </button>
     </div>
@@ -38,54 +39,33 @@
         <div class="info-card">
           <h3>Datos de Placa</h3>
           <div class="info-rows">
-            <div class="info-row">
-              <span class="info-label">Tag</span>
-              <span class="info-value">{{ asset.tag }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Nombre</span>
-              <span class="info-value">{{ asset.name }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Tipo</span>
-              <span class="info-value">{{ asset.type }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Ubicación</span>
-              <span class="info-value">{{ asset.location }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">RPM Nominal</span>
-              <span class="info-value">{{ asset.rpmNominal }} RPM</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Límite RMS</span>
-              <span class="info-value">{{ asset.rmsLimit }} mm/s</span>
-            </div>
+            <AssetInfoRow label="Tag"          :value="asset.tag" />
+            <AssetInfoRow label="Nombre"       :value="asset.name" />
+            <AssetInfoRow label="Tipo"         :value="asset.type" />
+            <AssetInfoRow label="Ubicación"    :value="asset.location" />
+            <AssetInfoRow label="RPM Nominal"  :value="`${asset.rpmNominal} RPM`" />
+            <AssetInfoRow label="Límite RMS"   :value="`${asset.rmsLimit} mm/s`" />
           </div>
         </div>
 
         <div class="info-card">
           <h3>Estado Actual</h3>
           <div class="info-rows">
-            <div class="info-row">
-              <span class="info-label">RMS Actual</span>
-              <span class="info-value" :class="asset.status">{{ asset.rmsActual.toFixed(2) }} mm/s</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">% del Límite</span>
-              <span class="info-value" :class="asset.status">
-                {{ ((asset.rmsActual / asset.rmsLimit) * 100).toFixed(1) }}%
-              </span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Estado</span>
-              <StatusBadge :status="asset.status" />
-            </div>
-            <div class="info-row">
-              <span class="info-label">Última actualización</span>
-              <span class="info-value">{{ formatDate(asset.lastUpdate) }}</span>
-            </div>
+            <AssetInfoRow
+              label="RMS Actual"
+              :value="`${asset.rmsActual.toFixed(2)} mm/s`"
+              :highlight="asset.status"
+            />
+            <AssetInfoRow
+              label="% del Límite"
+              :value="`${rmsPercentage.toFixed(1)}%`"
+              :highlight="asset.status"
+            />
+            <AssetInfoRow label="Última actualización" :value="formatDate(asset.lastUpdate)" />
+          </div>
+          <div class="status-row">
+            <span class="info-label">Estado</span>
+            <StatusBadge :status="asset.status" />
           </div>
         </div>
       </div>
@@ -94,15 +74,14 @@
     <!-- Tab: Monitoreo en Vivo -->
     <div v-if="activeTab === 'live'" class="tab-content">
       <div class="charts-grid">
-        <div class="chart-card full-width">
+        <div class="chart-card">
           <div class="chart-card-header">
             <h3>Forma de Onda en Tiempo Real</h3>
             <span class="live-indicator">● EN VIVO</span>
           </div>
           <WaveformChart :data="waveformData" />
         </div>
-
-        <div class="chart-card full-width">
+        <div class="chart-card">
           <div class="chart-card-header">
             <h3>Espectro de Frecuencias (FFT)</h3>
           </div>
@@ -151,97 +130,38 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAssetsStore } from '../stores/assetsStore.js'
-import { useAlarmsStore } from '../stores/alarmsStore.js'
+import { useAsset } from '../composables/useAsset.js'
+import { useChartData } from '../composables/useChartData.js'
+import { useRealtime } from '../composables/useRealtime.js'
 import StatusBadge from '../components/common/StatusBadge.vue'
+import AssetInfoRow from '../components/assets/AssetInfoRow.vue'
 import WaveformChart from '../components/charts/WaveformChart.vue'
 import FFTChart from '../components/charts/FFTChart.vue'
 import TrendChart from '../components/charts/TrendChart.vue'
 
+import { BookText, Activity, TrendingUp, BellDot } from 'lucide-vue-next';
+
 const props = defineProps({ id: { type: String, required: true } })
 const router = useRouter()
-const assetsStore = useAssetsStore()
-const alarmsStore = useAlarmsStore()
 
-const asset = computed(() =>
-  assetsStore.assets.find(a => a.id === Number(props.id))
-)
+// Composables — toda la lógica vive aquí afuera
+const { asset, assetAlarms, rmsPercentage, formatDate } = useAsset(props.id)
+const { waveformData, fftData, fftFrequencies, trendData, initAll, refreshLive } = useChartData(asset)
 
-const assetAlarms = computed(() =>
-  alarmsStore.alarms.filter(a => a.assetId === Number(props.id))
-)
+// Inicia data y refresca gráficas en vivo cada 2 segundos
+initAll()
+useRealtime(refreshLive, 2000)
 
 const activeTab = ref('info')
 
 const tabs = [
-  { key: 'info',   label: '📋 Información' },
-  { key: 'live',   label: '📡 Monitoreo en Vivo' },
-  { key: 'trend',  label: '📈 Tendencia' },
-  { key: 'alarms', label: '🚨 Alarmas' },
+  { key: 'info',   label: 'Información' , icon: BookText},
+  { key: 'live',   label: 'Monitoreo en Vivo', icon: Activity },
+  { key: 'trend',  label: 'Tendencia', icon: TrendingUp },
+  { key: 'alarms', label: 'Alarmas', icon: BellDot },
 ]
-
-// --- Data simulada ---
-const waveformData = ref([])
-const fftData = ref([])
-const fftFrequencies = ref([])
-const trendData = ref([])
-
-function generateWaveform() {
-  const points = 200
-  waveformData.value = Array.from({ length: points }, (_, i) => {
-    const rms = asset.value?.rmsActual || 1
-    return +(Math.sin(i * 0.15) * rms + (Math.random() - 0.5) * 0.3).toFixed(3)
-  })
-}
-
-function generateFFT() {
-  const bins = 64
-  fftFrequencies.value = Array.from({ length: bins }, (_, i) => Math.round(i * (500 / bins)))
-  fftData.value = Array.from({ length: bins }, (_, i) => {
-    const rms = asset.value?.rmsActual || 1
-    const base = i < 5 ? rms * 0.8 : Math.random() * rms * 0.3
-    return +base.toFixed(3)
-  })
-}
-
-function generateTrend() {
-  const points = 20
-  const now = Date.now()
-  trendData.value = Array.from({ length: points }, (_, i) => {
-    const rms = asset.value?.rmsActual || 1
-    const variation = (Math.random() - 0.5) * rms * 0.4
-    return {
-      time: new Date(now - (points - i) * 60000 * 5).toLocaleTimeString('es-CO', {
-        hour: '2-digit', minute: '2-digit'
-      }),
-      value: +(rms + variation).toFixed(2)
-    }
-  })
-}
-
-function formatDate(iso) {
-  return new Date(iso).toLocaleString('es-CO', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  })
-}
-
-let liveInterval = null
-
-onMounted(() => {
-  generateWaveform()
-  generateFFT()
-  generateTrend()
-  // Simula actualización en tiempo real cada 2 segundos
-  liveInterval = setInterval(() => {
-    generateWaveform()
-    generateFFT()
-  }, 2000)
-})
-
-onUnmounted(() => clearInterval(liveInterval))
 </script>
 
 <style scoped>
@@ -255,10 +175,10 @@ onUnmounted(() => clearInterval(liveInterval))
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--color-surface);
+  background-color: var(--color-surface4);
   border-radius: 12px;
   padding: 20px 24px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .asset-header-left {
@@ -268,24 +188,27 @@ onUnmounted(() => clearInterval(liveInterval))
 }
 
 .back-btn {
-  background: var(--color-surface2);
-  border: none;
-  color: var(--color-text);
+  background: var(--color-surface4);
+  border: 1px solid var(--color-surface);
+  color: var(--color-text-dark);
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.2s;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
 .back-btn:hover {
-  background: var(--color-accent);
+  background: var(--color-surface3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 .asset-tag-title {
   font-size: 24px;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--color-text-dark);
   font-family: monospace;
 }
 
@@ -324,37 +247,41 @@ onUnmounted(() => clearInterval(liveInterval))
 
 .tabs {
   display: flex;
-  gap: 8px;
-  border-bottom: 1px solid var(--color-surface2);
-  padding-bottom: 0;
+  gap: 6px;
+  background-color: var(--color-surface4);
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--color-surface);
 }
 
 .tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: none;
   border: none;
-  color: var(--color-text-muted);
-  padding: 10px 20px;
+  color: var(--color-text-dark);
+  padding: 8px 16px;
   cursor: pointer;
-  font-size: 14px;
-  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
   transition: all 0.2s;
-  margin-bottom: -1px;
+  margin-bottom: 0; /* ← quita el margin-bottom anterior */
 }
 
-.tab-btn:hover { color: var(--color-text); }
+.tab-btn:hover {
+  background-color: var(--color-surface3);
+  color: var(--color-text-dark);
+}
 
 .tab-btn.active {
-  color: var(--color-text);
-  border-bottom-color: var(--color-accent);
+  background-color: var(--color-surface4);
+  color: var(--color-text-dark);
+  border-bottom: none; /* ← elimina el borde inferior anterior */
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
-.tab-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* Info tab */
 .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -362,48 +289,50 @@ onUnmounted(() => clearInterval(liveInterval))
 }
 
 .info-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface4);
   border-radius: 12px;
   padding: 20px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .info-card h3 {
-  color: var(--color-text);
+  color: var(--color-text-dark);
   font-size: 15px;
   margin-bottom: 16px;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-surface2);
+  border-bottom: 1px solid var(--color-surface4);
 }
 
 .info-rows {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: 12px;
 }
 
-.info-row {
+.status-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background-color: var(--color-surfac4);
+  border: 1px solid var(--color-surface);
+  transition: background 0.2s;
+}
+
+.status-row:hover {
+  background-color: var(--color-surface3);
 }
 
 .info-label {
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
-
-.info-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--color-text-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.info-value.normal   { color: var(--color-normal); }
-.info-value.warning  { color: var(--color-warning); }
-.info-value.critical { color: var(--color-critical); }
-
-/* Charts */
 .charts-grid {
   display: flex;
   flex-direction: column;
@@ -411,10 +340,10 @@ onUnmounted(() => clearInterval(liveInterval))
 }
 
 .chart-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface4);
   border-radius: 12px;
   padding: 20px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .chart-card-header {
@@ -425,7 +354,7 @@ onUnmounted(() => clearInterval(liveInterval))
 }
 
 .chart-card-header h3 {
-  color: var(--color-text);
+  color: var(--color-text-dark);
   font-size: 15px;
 }
 
@@ -440,7 +369,6 @@ onUnmounted(() => clearInterval(liveInterval))
   50% { opacity: 0.3; }
 }
 
-/* Alarmas */
 .alarms-list {
   display: flex;
   flex-direction: column;
@@ -451,10 +379,10 @@ onUnmounted(() => clearInterval(liveInterval))
   display: flex;
   align-items: center;
   gap: 16px;
-  background-color: var(--color-surface);
+  background-color: var(--color-surface4);
   border-radius: 10px;
   padding: 14px 16px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .alarm-severity-bar {
@@ -471,7 +399,8 @@ onUnmounted(() => clearInterval(liveInterval))
 
 .alarm-message {
   font-size: 14px;
-  color: var(--color-text);
+  font-weight: 600;
+  color: var(--color-text-dark);
   margin-bottom: 4px;
 }
 

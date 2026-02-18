@@ -1,5 +1,6 @@
 <template>
-  <div class="asset-card" :class="asset.status" @click="goToDetail">
+  <BaseCard clickable @click="goToDetail" class="asset-card" :class="asset.status">
+
     <div class="card-header">
       <div class="asset-tag">{{ asset.tag }}</div>
       <StatusBadge :status="asset.status" />
@@ -9,18 +10,19 @@
     <div class="asset-type">{{ asset.type }}</div>
 
     <div class="asset-metrics">
-      <div class="metric">
-        <span class="metric-label">RMS Actual</span>
-        <span class="metric-value" :class="asset.status">{{ asset.rmsActual.toFixed(2) }} mm/s</span>
-      </div>
-      <div class="metric">
-        <span class="metric-label">Límite</span>
-        <span class="metric-value">{{ asset.rmsLimit }} mm/s</span>
-      </div>
-      <div class="metric">
-        <span class="metric-label">RPM Nominal</span>
-        <span class="metric-value">{{ asset.rpmNominal }}</span>
-      </div>
+      <AssetMetric
+        label="RMS Actual"
+        :value="`${asset.rmsActual.toFixed(2)} mm/s`"
+        :highlight="asset.status"
+      />
+      <AssetMetric
+        label="Límite"
+        :value="`${asset.rmsLimit} mm/s`"
+      />
+      <AssetMetric
+        label="RPM Nominal"
+        :value="`${asset.rpmNominal}`"
+      />
     </div>
 
     <div class="rms-bar-container">
@@ -34,19 +36,19 @@
     <div class="card-footer">
       <span class="location">📍 {{ asset.location }}</span>
     </div>
-  </div>
+
+  </BaseCard>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import BaseCard from '../common/BaseCard.vue'
 import StatusBadge from '../common/StatusBadge.vue'
+import AssetMetric from './AssetMetric.vue'
 
 const props = defineProps({
-  asset: {
-    type: Object,
-    required: true
-  }
+  asset: { type: Object, required: true }
 })
 
 const router = useRouter()
@@ -62,19 +64,10 @@ const barWidth = computed(() => {
 </script>
 
 <style scoped>
+/* Le pasamos la clase al BaseCard mediante :class */
 .asset-card {
-  background-color: var(--color-surface4); /* Este es el color del Fondo de las Tarjetas de Activo */
-  border-radius: 12px;
-  padding: 20px;
-  cursor: pointer;
-  border: 1px solid var(--color-surface2);
+  background-color: var(--color-surface4) !important;
   border-left: 4px solid var(--color-offline);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.asset-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
 }
 
 .asset-card.normal   { border-left-color: var(--color-normal); }
@@ -114,28 +107,6 @@ const barWidth = computed(() => {
   justify-content: space-between;
   margin-bottom: 12px;
 }
-
-.metric {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.metric-label {
-  font-size: 11px;
-  color: var(--color-text-dark);
-  text-transform: uppercase;
-}
-
-.metric-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-dark);
-}
-
-.metric-value.normal   { color: var(--color-normal); }
-.metric-value.warning  { color: var(--color-warning); }
-.metric-value.critical { color: var(--color-critical); }
 
 .rms-bar-container {
   height: 4px;

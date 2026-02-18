@@ -109,14 +109,14 @@ const thresholds = ref([
 }
 
 .settings-section {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface4);
   border-radius: 12px;
   padding: 24px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .section-title {
-  color: var(--color-text);
+  color: var(--color-text-dark);
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 20px;
@@ -131,16 +131,16 @@ const thresholds = ref([
 }
 
 .threshold-card {
-  background-color: var(--color-bg);
+  background-color: var(--color-surface4);
   border-radius: 10px;
   padding: 16px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .threshold-type {
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--color-text-dark);
   display: block;
   margin-bottom: 14px;
 }
@@ -164,11 +164,11 @@ const thresholds = ref([
 }
 
 .threshold-input {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-surface2);
+  background-color: var(--color-surface4);
+  border: 1px solid var(--color-surface);
   border-radius: 6px;
   padding: 8px 12px;
-  color: var(--color-text);
+  color: var(--color-text-subtle);
   font-size: 14px;
   font-weight: 600;
   width: 100%;
@@ -185,7 +185,7 @@ const thresholds = ref([
   align-items: center;
   margin-bottom: 16px;
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--color-text-dark);
 }
 
 .add-btn {
@@ -213,9 +213,9 @@ const thresholds = ref([
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background-color: var(--color-bg);
+  background-color: var(--color-surface4);
   border-radius: 8px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .asset-row-info {
@@ -228,18 +228,18 @@ const thresholds = ref([
   font-family: monospace;
   font-weight: 700;
   font-size: 14px;
-  color: var(--color-text);
+  color: var(--color-text-dark);
   min-width: 60px;
 }
 
 .asset-row-name {
   font-size: 13px;
-  color: var(--color-text);
+  color: var(--color-text-dark);
 }
 
 .asset-row-type {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-dark);
 }
 
 .asset-row-actions {
@@ -275,16 +275,16 @@ const thresholds = ref([
 
 .connection-label {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--color-text-dark);
   min-width: 200px;
 }
 
 .api-input {
-  background-color: var(--color-bg);
-  border: 1px solid var(--color-surface2);
+  background-color: var(--color-surface4);
+  border: 1px solid var(--color-surface);
   border-radius: 8px;
   padding: 8px 14px;
-  color: var(--color-text);
+  color: var(--color-text-dark);
   font-size: 13px;
   width: 300px;
   outline: none;

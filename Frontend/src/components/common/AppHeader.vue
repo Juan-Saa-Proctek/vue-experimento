@@ -8,7 +8,9 @@
       <div class="clock">{{ currentTime }}</div>
       <div class="divider"></div>
       <div class="alarms-indicator" :class="{ 'has-alarms': activeAlarms > 0 }">
-        🚨 {{ activeAlarms }} alarma{{ activeAlarms !== 1 ? 's' : '' }} activa{{ activeAlarms !== 1 ? 's' : '' }}
+        <BellRing v-if="activeAlarms > 0" :size="16" />
+        <Bell v-else :size="16" />
+        <span>{{ activeAlarms }} Alarma{{ activeAlarms !== 1 ? 's' : '' }} Activa{{ activeAlarms !== 1 ? 's' : '' }}</span>
       </div>
     </div>
   </header>
@@ -18,6 +20,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAlarmsStore } from '../../stores/alarmsStore.js'
+import { Bell, BellRing } from 'lucide-vue-next'
+
 
 const route = useRoute()
 const alarmsStore = useAlarmsStore()
@@ -88,6 +92,9 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .alarms-indicator {
+  display: flex;        
+  align-items: center;  
+  gap: 8px;             
   font-size: 13px;
   color: var(--color-text-muted);
   padding: 4px 12px;

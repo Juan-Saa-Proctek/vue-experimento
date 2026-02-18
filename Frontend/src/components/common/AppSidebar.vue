@@ -1,37 +1,36 @@
 <template>
   <aside class="sidebar" :class="{ collapsed: isCollapsed }">
     <div class="sidebar-logo">
-      <span class="logo-icon">⚙️</span>
-      <span class="logo-text">VibMonitor</span>
+      <LogoIcon v-if="!isCollapsed" class="logo-icon" />
       <button class="toggle-btn" @click="toggleSidebar">
-        {{ isCollapsed ? '→' : '←' }}
+        <Menu :size="20" />
       </button>
     </div>
 
     <nav class="sidebar-nav">
       <RouterLink to="/dashboard" class="nav-item" active-class="active">
-        <span class="nav-icon">🏠</span>
+        <Home class="nav-icon" :size="18" />
         <span class="nav-label">Dashboard</span>
       </RouterLink>
 
       <RouterLink to="/alarms" class="nav-item" active-class="active">
-        <span class="nav-icon">🚨</span>
+        <Bell class="nav-icon" :size="18" />
         <span class="nav-label">Alarmas</span>
         <span v-if="activeAlarms > 0 && !isCollapsed" class="alarm-badge">{{ activeAlarms }}</span>
       </RouterLink>
 
       <RouterLink to="/settings" class="nav-item" active-class="active">
-        <span class="nav-icon">⚙️</span>
-        <FontAwesomeIcon :icon="byPrefixAndName.far['bell']" />
+        <Settings class="nav-icon" :size="18" />
         <span class="nav-label">Configuración</span>
       </RouterLink>
     </nav>
 
     <div class="sidebar-footer">
-      <div class="system-status">
-        <span class="status-dot" :class="systemOnline ? 'online' : 'offline'"></span>
-        <span class="nav-label">{{ systemOnline ? 'Sistema Online' : 'Sin conexión' }}</span>
-      </div>
+    <div class="system-status">
+      <Wifi v-if="systemOnline" :size="20" color="var(--color-normal)" />
+      <WifiOff v-else :size="20" color="var(--color-offline)" />
+      <span class="nav-label">{{ systemOnline ? 'Sistema En Linea' : 'Sin conexión' }}</span>
+    </div>
     </div>
   </aside>
 </template>
@@ -39,6 +38,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAlarmsStore } from '../../stores/alarmsStore.js'
+import { Home, Bell, Settings, Wifi, WifiOff, Menu } from 'lucide-vue-next'
+import LogoIcon from '@/assets/icons/logo.svg?component'
 
 const isCollapsed = ref(false)
 const alarmsStore = useAlarmsStore()
@@ -78,7 +79,10 @@ const toggleSidebar = () => {
   padding: 24px 8px;
 }
 .logo-icon {
-  font-size: 24px;
+  width: 120px;
+  height: auto;
+  flex-shrink: 0;
+  color: var(--color-text);
 }
 .logo-text {
   font-size: 18px;

@@ -77,7 +77,7 @@ onUnmounted(() => clearInterval(timer))
 
 .clock {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-family: monospace;
 }
 
@@ -96,7 +96,7 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .alarms-indicator.has-alarms {
-  color: var(--color-critical);
+  color: var(--color-critical2);
   background-color: rgba(255, 68, 68, 0.15);
   animation: pulse 2s infinite;
 }

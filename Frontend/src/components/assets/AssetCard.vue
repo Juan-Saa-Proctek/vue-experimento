@@ -34,7 +34,7 @@
     </div>
 
     <div class="card-footer">
-      <span class="location">📍 {{ asset.location }}</span>
+      <span class="location"><MapPin :size="14" />{{ asset.location }}</span>
     </div>
 
   </BaseCard>
@@ -46,6 +46,7 @@ import { useRouter } from 'vue-router'
 import BaseCard from '../common/BaseCard.vue'
 import StatusBadge from '../common/StatusBadge.vue'
 import AssetMetric from './AssetMetric.vue'
+import {MapPin } from 'lucide-vue-next';
 
 const props = defineProps({
   asset: { type: Object, required: true }
@@ -134,6 +135,9 @@ const barWidth = computed(() => {
 }
 
 .location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   color: var(--color-text-dark);
 }

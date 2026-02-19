@@ -99,7 +99,7 @@ onUnmounted(() => clearInterval(timer))
   color: var(--color-text-muted);
   padding: 4px 12px;
   border-radius: 20px;
-  background-color: var(--color-surface2);
+  background-color: var(--color-surface4);
 }
 
 .alarms-indicator.has-alarms {

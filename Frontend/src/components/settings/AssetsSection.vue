@@ -9,7 +9,9 @@
       <div class="management-header">
         <span class="assets-count">{{ assets.length }} equipos registrados</span>
         <button class="add-btn" @click="showForm = !showForm">
-          {{ showForm ? '✕ Cancelar' : '+ Agregar Equipo' }}
+          <CircleX v-if="showForm" :size="16" />
+          <CirclePlus v-else :size="16" />
+          {{ showForm ? 'Cancelar' : 'Agregar Equipo' }}
         </button>
       </div>
 
@@ -61,7 +63,7 @@
             <span class="asset-row-tag">{{ asset.tag }}</span>
             <span class="asset-row-name">{{ asset.name }}</span>
             <span class="asset-row-type">{{ asset.type }}</span>
-            <span class="asset-row-location">📍 {{ asset.location }}</span>
+            <span class="asset-row-location"><MapPin :size="14" /> {{ asset.location }}</span>
           </div>
           <div class="asset-row-actions">
             <StatusBadge :status="asset.status" />
@@ -80,6 +82,7 @@ import { settingsAPI } from '../../services/api.js'
 import StatusBadge from '../common/StatusBadge.vue'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import ErrorState from '../common/ErrorState.vue'
+import {CirclePlus, CircleX, MapPin } from 'lucide-vue-next';
 
 const assets   = ref([])
 const loading  = ref(false)
@@ -174,6 +177,9 @@ onMounted(() => fetchAssets())
 }
 
 .add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background-color: var(--color-accent);
   border: none;
   color: white;
@@ -188,10 +194,10 @@ onMounted(() => fetchAssets())
 .add-btn:hover { opacity: 0.85; }
 
 .add-form {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface4);
   border-radius: 10px;
   padding: 20px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -262,9 +268,9 @@ onMounted(() => fetchAssets())
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background-color: var(--color-surface);
+  background-color: var(--color-surface4);
   border-radius: 8px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .asset-row-info {
@@ -287,6 +293,9 @@ onMounted(() => fetchAssets())
 }
 
 .asset-row-type, .asset-row-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   color: var(--color-text-muted);
 }

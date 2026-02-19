@@ -1,37 +1,76 @@
 <template>
-  <div class="charts-grid">
-    <div class="chart-card">
+  <div class="live-layout">
+
+    <!-- Gauge RMS -->
+    <div class="chart-card gauge-card">
       <div class="chart-card-header">
-        <h3>Forma de Onda en Tiempo Real</h3>
+        <h3>RMS Actual</h3>
         <span class="live-indicator">● EN VIVO</span>
       </div>
-      <WaveformChart :data="waveformData" />
+      <GaugeChart
+        :value="asset.rmsActual"
+        :limit="asset.rmsLimit"
+        :status="asset.status"
+      />
     </div>
-    <div class="chart-card">
+
+    <!-- Waveform -->
+    <div class="chart-card waveform-card">
       <div class="chart-card-header">
-        <h3>Espectro de Frecuencias (FFT)</h3>
+        <h3>Forma de Onda</h3>
       </div>
-      <FFTChart :data="fftData" :frequencies="fftFrequencies" />
+      <WaveformChart :data="waveformData" :status="asset.status" />
     </div>
+
+    <!-- FFT -->
+    <div class="chart-card fft-card">
+      <div class="chart-card-header">
+        <h3>Espectro FFT</h3>
+      </div>
+      <FFTChart
+        :data="fftData"
+        :frequencies="fftFrequencies"
+        :rpmNominal="asset.rpmNominal"
+      />
+    </div>
+
   </div>
 </template>
 
 <script setup>
 import WaveformChart from '../charts/WaveformChart.vue'
-import FFTChart from '../charts/FFTChart.vue'
+import FFTChart      from '../charts/FFTChart.vue'
+import GaugeChart    from '../charts/GaugeChart.vue'
 
 defineProps({
-  waveformData:   { type: Array, required: true },
-  fftData:        { type: Array, required: true },
-  fftFrequencies: { type: Array, required: true }
+  asset:          { type: Object, required: true },
+  waveformData:   { type: Array,  required: true },
+  fftData:        { type: Array,  required: true },
+  fftFrequencies: { type: Array,  required: true }
 })
 </script>
 
 <style scoped>
-.charts-grid {
-  display: flex;
-  flex-direction: column;
+.live-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  grid-template-rows: auto auto;
   gap: 16px;
+}
+
+.gauge-card {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+
+.waveform-card {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.fft-card {
+  grid-column: 2;
+  grid-row: 2;
 }
 
 .chart-card {
@@ -45,12 +84,19 @@ defineProps({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .chart-card-header h3 {
   color: var(--color-text-dark);
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 400;
 }
 
 .live-indicator {
@@ -61,6 +107,6 @@ defineProps({
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  50%       { opacity: 0.3; }
 }
 </style>

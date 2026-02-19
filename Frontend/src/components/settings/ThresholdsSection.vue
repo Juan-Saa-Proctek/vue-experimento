@@ -99,10 +99,10 @@ onMounted(() => fetchAssets())
 }
 
 .threshold-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface3);
   border-radius: 10px;
   padding: 16px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -123,7 +123,8 @@ onMounted(() => fetchAssets())
 
 .threshold-type {
   font-size: 11px;
-  color: var(--color-text-muted);
+  font-weight: 600;
+  color: var(--color-text-dark);
   text-transform: uppercase;
 }
 
@@ -155,9 +156,9 @@ onMounted(() => fetchAssets())
 .threshold-input:focus { border-color: var(--color-warning); }
 
 .apply-btn {
-  background-color: var(--color-surface2);
+  background-color: var(--color-accent);
   border: none;
-  color: var(--color-text-dark);
+  color: white;
   padding: 8px;
   border-radius: 6px;
   cursor: pointer;
@@ -166,5 +167,5 @@ onMounted(() => fetchAssets())
   transition: background 0.2s;
 }
 
-.apply-btn:hover { background-color: var(--color-accent); color: white; }
+.apply-btn:hover { opacity: 0.85; }
 </style>

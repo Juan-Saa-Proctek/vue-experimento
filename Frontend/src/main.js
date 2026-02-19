@@ -3,13 +3,14 @@ import { createPinia } from 'pinia'
 import ECharts from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart, BarChart } from 'echarts/charts'
+import { LineChart, BarChart,GaugeChart } from 'echarts/charts'
 import {
   GridComponent,
   TooltipComponent,
   LegendComponent,
   TitleComponent,
-  DataZoomComponent
+  DataZoomComponent,
+  VisualMapComponent
 } from 'echarts/components'
 
 import App from './App.vue'
@@ -21,11 +22,13 @@ use([
   CanvasRenderer,
   LineChart,
   BarChart,
+  GaugeChart,
   GridComponent,
   TooltipComponent,
   LegendComponent,
   TitleComponent,
-  DataZoomComponent
+  DataZoomComponent,
+  VisualMapComponent 
 ])
 
 const app = createApp(App)

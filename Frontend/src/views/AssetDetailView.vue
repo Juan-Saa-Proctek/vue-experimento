@@ -12,7 +12,10 @@
       <!-- Header del activo -->
       <div class="asset-header">
         <div class="asset-header-left">
-          <button class="back-btn" @click="router.back()">← Volver</button>
+          <button class="back-btn" @click="router.back()">
+            <CircleArrowLeft size="16" />
+            Volver
+          </button>
           <div>
             <div class="asset-tag-title">{{ asset.tag }}</div>
             <div class="asset-name-title">{{ asset.name }}</div>
@@ -50,6 +53,7 @@
       />
       <AssetLiveTab
         v-if="activeTab === 'live'"
+        :asset="asset"
         :waveformData="waveformData"
         :fftData="fftData"
         :fftFrequencies="fftFrequencies"
@@ -58,11 +62,22 @@
         v-if="activeTab === 'trend'"
         :trendData="trendData"
         :rmsLimit="asset.rmsLimit"
+        @point-click="onTrendPointClick"
       />
       <AssetAlarmsTab
         v-if="activeTab === 'alarms'"
         :alarms="assetAlarms"
         :formatDate="formatDate"
+      />
+      <!-- Modal FFT -->
+      <FFTModal
+        v-if="showFFTModal"
+        :time="modalPoint?.time"
+        :value="modalPoint?.value"
+        :fftData="fftData"
+        :frequencies="fftFrequencies"
+        :rpmNominal="asset.rpmNominal"
+        @close="showFFTModal = false"
       />
 
     </template>
@@ -85,6 +100,8 @@
   import AssetLiveTab   from '../components/assets/AssetLiveTab.vue'
   import AssetTrendTab  from '../components/assets/AssetTrendTab.vue'
   import AssetAlarmsTab from '../components/assets/AssetAlarmsTab.vue'
+  import { CircleArrowLeft } from 'lucide-vue-next';
+  import FFTModal from '../components/common/FFTModal.vue'
 
   const props = defineProps({ id: { type: String, required: true } })
   const router = useRouter()
@@ -112,6 +129,13 @@
     { key: 'trend',  label: 'Tendencia',           icon: TrendingUp },
     { key: 'alarms', label: 'Alarmas',             icon: BellDot },
   ]
+  const showFFTModal  = ref(false)
+  const modalPoint    = ref(null)
+
+  function onTrendPointClick(point) {
+    modalPoint.value   = point
+    showFFTModal.value = true
+  }
 </script>
 
 <style scoped>
@@ -138,9 +162,12 @@
 }
 
 .back-btn {
-  background: var(--color-surface4);
-  border: 1px solid var(--color-surface);
-  color: var(--color-text-dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-accent);
+  border: none;
+  color: white;
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
@@ -151,8 +178,7 @@
 }
 
 .back-btn:hover {
-  background: var(--color-surface3);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  opacity: 0.85;
 }
 
 .asset-tag-title {

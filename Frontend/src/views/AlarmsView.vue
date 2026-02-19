@@ -128,14 +128,14 @@ onMounted(() => alarmsStore.fetchAlarms())
 }
 
 .summary-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface3);
   border-radius: 12px;
   padding: 20px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
   min-width: 140px;
 }
 
@@ -165,8 +165,8 @@ onMounted(() => alarmsStore.fetchAlarms())
 }
 
 .filter-btn {
-  background: var(--color-surface);
-  border: 1px solid var(--color-surface2);
+  background: var(--color-surface3);
+  border: 1px solid var(--color-surface);
   color: var(--color-text-muted);
   padding: 8px 18px;
   border-radius: 20px;
@@ -177,15 +177,15 @@ onMounted(() => alarmsStore.fetchAlarms())
 
 .filter-btn:hover,
 .filter-btn.active {
-  background: var(--color-surface2);
-  color: var(--color-text);
+  background: var(--color-surface4);
+  color: var(--color-text-dark);
   border-color: var(--color-accent);
 }
 
 .alarms-table {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface3);
   border-radius: 12px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
   overflow: hidden;
 }
 
@@ -193,8 +193,9 @@ onMounted(() => alarmsStore.fetchAlarms())
   display: grid;
   grid-template-columns: 130px 180px 1fr 120px 160px 100px;
   padding: 12px 20px;
-  background-color: var(--color-surface2);
+  background-color: var(--color-surface3);
   font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--color-text-muted);

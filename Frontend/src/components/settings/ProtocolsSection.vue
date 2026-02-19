@@ -10,7 +10,7 @@
       <div class="protocol-card">
         <div class="protocol-header">
           <div class="protocol-title">
-            <span class="protocol-icon">📡</span>
+            <span class="protocol-icon"><SatelliteDish size="20" /></span>
             <span>MQTT</span>
             <span class="protocol-badge" :class="config.mqtt_enabled ? 'active' : 'inactive'">
               {{ config.mqtt_enabled ? 'Activo' : 'Inactivo' }}
@@ -53,7 +53,7 @@
       <div class="protocol-card">
         <div class="protocol-header">
           <div class="protocol-title">
-            <span class="protocol-icon">🔌</span>
+            <span class="protocol-icon"><Cable size="20" /></span>
             <span>Serial / UART</span>
             <span class="protocol-badge" :class="config.serial_enabled ? 'active' : 'inactive'">
               {{ config.serial_enabled ? 'Activo' : 'Inactivo' }}
@@ -91,7 +91,7 @@
       <div class="protocol-card">
         <div class="protocol-header">
           <div class="protocol-title">
-            <span class="protocol-icon">⚙️</span>
+            <span class="protocol-icon"><EthernetPort size="20" /></span>
             <span>Modbus TCP/RTU</span>
             <span class="protocol-badge" :class="config.modbus_enabled ? 'active' : 'inactive'">
               {{ config.modbus_enabled ? 'Activo' : 'Inactivo' }}
@@ -117,7 +117,7 @@
       </div>
 
       <div class="actions">
-        <span v-if="saved" class="saved-msg">✅ Configuración guardada. Reinicia el servidor para aplicar.</span>
+        <span v-if="saved" class="saved-msg"><CircleCheckBig size="16" class="saved-icon" /> Configuración guardada.</span>
         <button class="save-btn" @click="saveProtocols" :disabled="saving">
           {{ saving ? 'Guardando...' : 'Guardar configuración' }}
         </button>
@@ -131,6 +131,8 @@ import { ref, onMounted } from 'vue'
 import { settingsAPI } from '../../services/api.js'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import ErrorState from '../common/ErrorState.vue'
+
+import { SatelliteDish, Cable, EthernetPort, CircleCheckBig } from 'lucide-vue-next';
 
 const loading = ref(false)
 const saving  = ref(false)
@@ -200,10 +202,10 @@ onMounted(() => fetchProtocols())
 }
 
 .protocol-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface3);
   border-radius: 10px;
   padding: 16px 20px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -224,7 +226,11 @@ onMounted(() => fetchProtocols())
   color: var(--color-text-dark);
 }
 
-.protocol-icon { font-size: 18px; }
+.protocol-icon { font-size: 18px; 
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
 .protocol-badge {
   font-size: 11px;

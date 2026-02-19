@@ -99,14 +99,14 @@ onMounted(() => fetchStatus())
 }
 
 .status-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface3);
   border-radius: 10px;
   padding: 16px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
   min-width: 120px;
 }
 
@@ -129,10 +129,10 @@ onMounted(() => fetchStatus())
 }
 
 .connection-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface3);
   border-radius: 10px;
   padding: 20px;
-  border: 1px solid var(--color-surface2);
+  border: 1px solid var(--color-surface);
 }
 
 .connection-row {

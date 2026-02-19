@@ -116,6 +116,59 @@
         </div>
       </div>
 
+      <!-- PCH Engineering -->
+      <div class="protocol-card">
+        <div class="protocol-header">
+          <div class="protocol-title">
+            <span class="protocol-icon"><Server size="20" /></span>
+            <span>PCH Engineering</span>
+            <span class="protocol-badge" :class="config.pch_enabled ? 'active' : 'inactive'">
+              {{ config.pch_enabled ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" v-model="config.pch_enabled" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="protocol-fields" v-if="config.pch_enabled">
+          <div class="field-row">
+            <div class="field-group small">
+              <label>Servidor</label>
+              <select v-model="config.pch_host" class="field-input">
+                <option value="pchcloud">PCH Cloud</option>
+                <option value="local">Local</option>
+                <option value="demo">Demo</option>
+              </select>
+            </div>
+            <div class="field-group small">
+              <label>Intervalo (minutos)</label>
+              <select v-model.number="config.pch_interval_minutes" class="field-input">
+                <option :value="15">15 min</option>
+                <option :value="30">30 min</option>
+                <option :value="60">1 hora</option>
+                <option :value="120">2 horas</option>
+                <option :value="240">4 horas</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label>Usuario</label>
+              <input v-model="config.pch_user" class="field-input" placeholder="usuario PCH" />
+            </div>
+            <div class="field-group">
+              <label>Contraseña</label>
+              <input v-model="config.pch_password" type="password" class="field-input" placeholder="••••••" />
+            </div>
+          </div>
+          <div class="topic-info">
+            <span class="topic-label">Consulta la última grabación de cada activo PCH cada</span>
+            <code>{{ config.pch_interval_minutes }} min</code>
+          </div>
+        </div>
+      </div>
+
       <div class="actions">
         <span v-if="saved" class="saved-msg"><CircleCheckBig size="16" class="saved-icon" /> Configuración guardada.</span>
         <button class="save-btn" @click="saveProtocols" :disabled="saving">
@@ -131,8 +184,7 @@ import { ref, onMounted } from 'vue'
 import { settingsAPI } from '../../services/api.js'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import ErrorState from '../common/ErrorState.vue'
-
-import { SatelliteDish, Cable, EthernetPort, CircleCheckBig } from 'lucide-vue-next';
+import { SatelliteDish, Cable, EthernetPort, CircleCheckBig, Server } from 'lucide-vue-next'
 
 const loading = ref(false)
 const saving  = ref(false)
@@ -140,17 +192,22 @@ const saved   = ref(false)
 const error   = ref(null)
 
 const config = ref({
-  mqtt_enabled:    false,
-  mqtt_host:       '',
-  mqtt_port:       1883,
-  mqtt_user:       '',
-  mqtt_password:   '',
-  serial_enabled:  false,
-  serial_port:     '',
-  serial_baudrate: 115200,
-  modbus_enabled:  false,
-  modbus_host:     '',
-  modbus_port:     502,
+  mqtt_enabled:         false,
+  mqtt_host:            '',
+  mqtt_port:            1883,
+  mqtt_user:            '',
+  mqtt_password:        '',
+  serial_enabled:       false,
+  serial_port:          '',
+  serial_baudrate:      115200,
+  modbus_enabled:       false,
+  modbus_host:          '',
+  modbus_port:          502,
+  pch_enabled:          false,
+  pch_host:             'pchcloud',
+  pch_user:             '',
+  pch_password:         '',
+  pch_interval_minutes: 60,
 })
 
 async function fetchProtocols() {
@@ -226,7 +283,7 @@ onMounted(() => fetchProtocols())
   color: var(--color-text-dark);
 }
 
-.protocol-icon { font-size: 18px; 
+.protocol-icon {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -249,7 +306,6 @@ onMounted(() => fetchProtocols())
   color: var(--color-offline);
 }
 
-/* Toggle switch */
 .toggle {
   position: relative;
   display: inline-block;
@@ -303,7 +359,7 @@ onMounted(() => fetchProtocols())
   flex: 1;
 }
 
-.field-group.small { max-width: 120px; }
+.field-group.small { max-width: 160px; }
 
 .field-group label {
   font-size: 11px;
@@ -321,6 +377,7 @@ onMounted(() => fetchProtocols())
   outline: none;
   transition: border-color 0.2s;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .field-input:focus { border-color: var(--color-accent); }
@@ -330,9 +387,8 @@ onMounted(() => fetchProtocols())
   align-items: center;
   gap: 8px;
   font-size: 12px;
+  color: var(--color-text-muted);
 }
-
-.topic-label { color: var(--color-text-muted); }
 
 code {
   background-color: var(--color-surface2);
@@ -351,6 +407,9 @@ code {
 }
 
 .saved-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: var(--color-normal);
 }

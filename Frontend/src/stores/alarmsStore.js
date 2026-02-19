@@ -31,6 +31,7 @@ export const useAlarmsStore = defineStore('alarms', () => {
     } catch (e) {
       error.value = e.message
       systemOnline.value = false
+
     } finally {
       loading.value = false
     }

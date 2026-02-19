@@ -69,13 +69,14 @@
         :alarms="assetAlarms"
         :formatDate="formatDate"
       />
-      <!-- Modal FFT -->
+
+      <!-- Modal FFT histórica -->
       <FFTModal
         v-if="showFFTModal"
         :time="modalPoint?.time"
         :value="modalPoint?.value"
-        :fftData="fftData"
-        :frequencies="fftFrequencies"
+        :fftData="modalPoint?.fftData"
+        :frequencies="modalPoint?.frequencies"
         :rpmNominal="asset.rpmNominal"
         @close="showFFTModal = false"
       />
@@ -92,7 +93,7 @@
   import { useAsset } from '../composables/useAsset.js'
   import { useChartData } from '../composables/useChartData.js'
   import { useRealtime } from '../composables/useRealtime.js'
-  import { BookText, Activity, TrendingUp, BellDot } from 'lucide-vue-next'
+  import { BookText, Activity, TrendingUp, BellDot, CircleArrowLeft } from 'lucide-vue-next'
   import StatusBadge    from '../components/common/StatusBadge.vue'
   import LoadingSpinner from '../components/common/LoadingSpinner.vue'
   import ErrorState     from '../components/common/ErrorState.vue'
@@ -100,8 +101,7 @@
   import AssetLiveTab   from '../components/assets/AssetLiveTab.vue'
   import AssetTrendTab  from '../components/assets/AssetTrendTab.vue'
   import AssetAlarmsTab from '../components/assets/AssetAlarmsTab.vue'
-  import { CircleArrowLeft } from 'lucide-vue-next';
-  import FFTModal from '../components/common/FFTModal.vue'
+  import FFTModal       from '../components/common/FFTModal.vue'
 
   const props = defineProps({ id: { type: String, required: true } })
   const router = useRouter()
@@ -110,30 +110,35 @@
   const { asset, assetAlarms, rmsPercentage, formatDate } = useAsset(props.id)
   const {
     waveformData, fftData, fftFrequencies, trendData,
-    initAll, refreshLive, disconnectWebSocket
+    initAll, refreshLive, disconnectWebSocket,
+    fetchHistoricalFFT,   // ← NUEVO
   } = useChartData(asset)
 
-  // Inicia con data simulada y conecta WebSocket
   initAll(Number(props.id))
-
-  // Fallback: si el WS no está activo refresca cada 2s con data simulada
   useRealtime(refreshLive, 2000)
-
-  // Desconecta el WS al salir de la vista
   onUnmounted(() => disconnectWebSocket())
 
   const activeTab = ref('info')
   const tabs = [
-    { key: 'info',   label: 'Información',       icon: BookText },
-    { key: 'live',   label: 'Monitoreo en Vivo',  icon: Activity },
-    { key: 'trend',  label: 'Tendencia',           icon: TrendingUp },
-    { key: 'alarms', label: 'Alarmas',             icon: BellDot },
+    { key: 'info',   label: 'Información',      icon: BookText  },
+    { key: 'live',   label: 'Monitoreo en Vivo', icon: Activity  },
+    { key: 'trend',  label: 'Tendencia',          icon: TrendingUp },
+    { key: 'alarms', label: 'Alarmas',            icon: BellDot  },
   ]
-  const showFFTModal  = ref(false)
-  const modalPoint    = ref(null)
 
-  function onTrendPointClick(point) {
-    modalPoint.value   = point
+  const showFFTModal = ref(false)
+  const modalPoint   = ref(null)
+
+  async function onTrendPointClick({ time, value }) {
+    // Busca FFT histórica en el backend para ese timestamp
+    const historical = await fetchHistoricalFFT(Number(props.id), time)
+
+    modalPoint.value = {
+      time,
+      value,
+      fftData:     historical.fftData,      // real o fallback al actual
+      frequencies: historical.frequencies,
+    }
     showFFTModal.value = true
   }
 </script>

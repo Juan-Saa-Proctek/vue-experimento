@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { createAssetWebSocket } from '../services/api.js'
+import { createAssetWebSocket, historyAPI } from '../services/api.js'  // ← agregado historyAPI
 
 export function useChartData(asset) {
   const waveformData   = ref([])
@@ -40,19 +40,16 @@ export function useChartData(asset) {
     }))
   }
 
-  // Conecta WebSocket y actualiza gráficas con data real
   function connectWebSocket(assetId) {
     if (ws) ws.close()
 
     ws = createAssetWebSocket(
       assetId,
       (data) => {
-        // data viene del backend: { rms, waveform, fft_data, frequencies, timestamp }
-        if (data.waveform)    waveformData.value   = data.waveform
-        if (data.fft_data)    fftData.value         = data.fft_data
-        if (data.frequencies) fftFrequencies.value  = data.frequencies
+        if (data.waveform)    waveformData.value  = data.waveform
+        if (data.fft_data)    fftData.value       = data.fft_data
+        if (data.frequencies) fftFrequencies.value = data.frequencies
 
-        // Agregar punto a la tendencia
         trendData.value.push({
           time:  new Date(data.timestamp).toLocaleTimeString('es-CO', {
             hour: '2-digit', minute: '2-digit'
@@ -60,7 +57,6 @@ export function useChartData(asset) {
           value: data.rms
         })
 
-        // Mantener solo los últimos 30 puntos
         if (trendData.value.length > 30) trendData.value.shift()
       },
       (error) => console.error('WS error:', error)
@@ -75,7 +71,6 @@ export function useChartData(asset) {
   }
 
   function refreshLive() {
-    // Si no hay WS activo, genera data simulada como fallback
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       generateWaveform()
       generateFFT()
@@ -89,8 +84,31 @@ export function useChartData(asset) {
     if (assetId) connectWebSocket(assetId)
   }
 
+  // ← NUEVO: FFT histórica en un timestamp dado
+  async function fetchHistoricalFFT(assetId, timestamp) {
+    try {
+      const response = await historyAPI.getFFT(assetId, timestamp)
+      return {
+        fftData:     response.fft_data,
+        frequencies: response.frequencies,
+        rms:         response.rms,
+        timestamp:   response.timestamp,
+      }
+    } catch (e) {
+      console.warn('FFT histórica no disponible, usando FFT actual:', e.message)
+      // Fallback: retorna la FFT actual del WebSocket
+      return {
+        fftData:     fftData.value,
+        frequencies: fftFrequencies.value,
+        rms:         null,
+        timestamp:   timestamp,
+      }
+    }
+  }
+
   return {
     waveformData, fftData, fftFrequencies, trendData,
-    initAll, refreshLive, connectWebSocket, disconnectWebSocket
+    initAll, refreshLive, connectWebSocket, disconnectWebSocket,
+    fetchHistoricalFFT,  // ← NUEVO
   }
 }

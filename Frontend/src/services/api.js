@@ -1,7 +1,10 @@
 import axios from 'axios'
 
+const API_BASE = `${window.location.protocol}//${window.location.hostname}:8000/api/v1`
+const WS_BASE  = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8000`
+
 const http = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: API_BASE,
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' }
 })
@@ -38,6 +41,7 @@ export const sensorsAPI = {
 export const historyAPI = {
   getTrend:   (assetId, hours = 24) => http.get(`/history/${assetId}/trend?hours=${hours}`),
   getSummary: (assetId, hours = 24) => http.get(`/history/${assetId}/summary?hours=${hours}`),
+  getFFT:     (assetId, ts)         => http.get(`/history/${assetId}/fft?timestamp=${ts}`),
 }
 
 export const settingsAPI = {
@@ -49,12 +53,19 @@ export const settingsAPI = {
   updateProtocols:   (data)    => http.post('/settings/protocols', data),
   getStatus:         ()        => http.get('/settings/status'),
 }
-// WebSocket helper
+
+export const pchAPI = {
+  testConnection: (host, username, password) =>
+    http.post('/pch/test-connection', { host, username, password }),
+  syncAssets: (host, username, password) =>
+    http.post('/pch/sync', { host, username, password }),
+  getHosts: () => http.get('/pch/hosts'),
+}
+
 export function createAssetWebSocket(assetId, onMessage, onError) {
-  const ws = new WebSocket(`ws://localhost:8000/ws/${assetId}`)
+  const ws = new WebSocket(`${WS_BASE}/ws/${assetId}`)
   ws.onmessage = (event) => onMessage(JSON.parse(event.data))
   ws.onerror   = (error) => onError && onError(error)
   ws.onclose   = () => console.log(`WS asset ${assetId} cerrado`)
   return ws
 }
-

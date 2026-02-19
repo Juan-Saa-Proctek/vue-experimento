@@ -17,51 +17,54 @@
       </div>
     </div>
 
-    <div class="connection-card">
-      <h4 class="subsection-title">Conexión con Backend</h4>
-      <div class="connection-row">
-        <span class="connection-label">URL del API</span>
-        <input type="text" v-model="apiUrl" class="api-input" placeholder="http://localhost:8000" />
-      </div>
-      <div class="connection-row">
-        <span class="connection-label">Intervalo de actualización</span>
-        <select v-model="refreshInterval" class="api-input">
-          <option :value="1000">1 segundo</option>
-          <option :value="2000">2 segundos</option>
-          <option :value="5000">5 segundos</option>
-        </select>
-      </div>
-      <div class="connection-row">
-        <span class="connection-label">Estado de conexión</span>
-        <span class="connection-status" :class="isOnline ? 'online' : 'offline'">
-          {{ isOnline ? '● Conectado' : '● Desconectado' }}
-        </span>
-      </div>
-      <button class="save-btn" @click="testConnection">Probar conexión</button>
+    <div class="connection-row">
+      <span class="connection-status" :class="isOnline ? 'online' : 'offline'">
+        {{ isOnline ? '● Servidor conectado' : '● Servidor desconectado' }}
+      </span>
+      <button class="save-btn" @click="fetchStatus">Actualizar</button>
     </div>
+
+    <div class="connection-card">
+      <h4 class="subsection-title">Importar Activos desde PCH</h4>
+      <p class="pch-description">
+        Conecta con un servidor PCH Engineering para importar automáticamente
+        los activos industriales a este sistema.
+      </p>
+      <button class="pch-btn" @click="showPCHModal = true">
+        <Server :size="15" />
+        Conectar servidor PCH
+      </button>
+    </div>
+
+    <PCHSyncModal
+      :show="showPCHModal"
+      @close="showPCHModal = false"
+      @synced="onPCHSynced"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { Server } from 'lucide-vue-next'
 import { settingsAPI } from '../../services/api.js'
+import PCHSyncModal from './PCHSyncModal.vue'
 
-const status          = ref(null)
-const apiUrl          = ref('http://localhost:8000')
-const refreshInterval = ref(2000)
-const isOnline        = ref(false)
+const status       = ref(null)
+const isOnline     = ref(false)
+const showPCHModal = ref(false)
 
 async function fetchStatus() {
   try {
-    status.value  = await settingsAPI.getStatus()
+    status.value   = await settingsAPI.getStatus()
     isOnline.value = true
   } catch {
     isOnline.value = false
   }
 }
 
-async function testConnection() {
-  await fetchStatus()
+function onPCHSynced() {
+  fetchStatus()
 }
 
 onMounted(() => fetchStatus())
@@ -128,45 +131,16 @@ onMounted(() => fetchStatus())
   text-transform: uppercase;
 }
 
-.connection-card {
-  background-color: var(--color-surface3);
-  border-radius: 10px;
-  padding: 20px;
-  border: 1px solid var(--color-surface);
-}
-
 .connection-row {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 12px;
+  gap: 16px;
 }
-
-.connection-label {
-  font-size: 13px;
-  color: var(--color-text-dark);
-  min-width: 200px;
-}
-
-.api-input {
-  background-color: var(--color-surface4);
-  border: 1px solid var(--color-surface);
-  border-radius: 8px;
-  padding: 8px 14px;
-  color: var(--color-text-dark);
-  font-size: 13px;
-  width: 300px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.api-input:focus { border-color: var(--color-accent); }
 
 .connection-status {
   font-size: 13px;
   font-weight: 600;
 }
-
 .connection-status.online  { color: var(--color-normal); }
 .connection-status.offline { color: var(--color-critical); }
 
@@ -174,15 +148,42 @@ onMounted(() => fetchStatus())
   background-color: var(--color-accent);
   border: none;
   color: white;
-  padding: 10px 24px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.save-btn:hover { opacity: 0.85; }
+
+.connection-card {
+  background-color: var(--color-surface3);
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid var(--color-surface);
+}
+
+.pch-description {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.pch-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-accent);
+  border: none;
+  color: white;
+  padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   transition: opacity 0.2s;
-  align-self: flex-start;
-  margin-top: 8px;
 }
-
-.save-btn:hover { opacity: 0.85; }
+.pch-btn:hover { opacity: 0.85; }
 </style>

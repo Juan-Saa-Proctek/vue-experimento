@@ -194,7 +194,7 @@ onMounted(() => fetchAssets())
 .add-btn:hover { opacity: 0.85; }
 
 .add-form {
-  background-color: var(--color-surface4);
+  background-color: var(--color-surface3);
   border-radius: 10px;
   padding: 20px;
   border: 1px solid var(--color-surface);

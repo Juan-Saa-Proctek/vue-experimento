@@ -5,8 +5,9 @@ from app.models.alarm import AlarmCreate
 from app.services.alarm_service import alarm_service
 from app.services.asset_service import asset_service
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 import numpy as np
+import json
 
 class SensorService:
 
@@ -41,14 +42,24 @@ class SensorService:
         status = self.compute_status(rms, asset.rms_limit)
         await asset_service.update_status(db, asset_id, status, rms)
 
-        # Guardar lectura en historial
-        reading = SensorReadingDB(asset_id=asset_id, rms=rms)
+        # Generar waveform y FFT antes de guardar
+        waveform = self.generate_waveform(rms)
+        frequencies, fft_data = self.generate_fft(waveform)
+
+        # Guardar lectura en historial incluyendo FFT serializado
+        reading = SensorReadingDB(
+            asset_id=asset_id,
+            rms=rms,
+            fft_data=json.dumps(fft_data),
+            frequencies=json.dumps(frequencies),
+        )
         db.add(reading)
         await db.commit()
+        await db.refresh(reading)
 
-        # Generar alarma si es necesario
+        # Generar alarma solo si no existe ya una activa del mismo tipo
         if status in ("warning", "critical"):
-            await alarm_service.create(db, AlarmCreate(
+            await alarm_service.create_if_not_active(db, AlarmCreate(
                 asset_id=asset_id,
                 asset_tag=asset.tag,
                 asset_name=asset.name,
@@ -59,10 +70,6 @@ class SensorService:
         elif status == "normal":
             await alarm_service.resolve_by_asset(db, asset_id)
 
-        # Generar waveform y FFT
-        waveform = self.generate_waveform(rms)
-        frequencies, fft_data = self.generate_fft(waveform)
-
         return RealtimeData(
             asset_id=asset_id,
             rms=rms,
@@ -71,10 +78,5 @@ class SensorService:
             frequencies=frequencies,
             timestamp=datetime.now()
         )
-
-    async def save_reading(self, db: AsyncSession, asset_id: int, rms: float, peak: float = None):
-        reading = SensorReadingDB(asset_id=asset_id, rms=rms, peak=peak)
-        db.add(reading)
-        await db.commit()
 
 sensor_service = SensorService()

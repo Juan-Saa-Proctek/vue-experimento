@@ -7,10 +7,13 @@ from app.core.websocket import ws_manager
 from app.db.database import init_db, get_db
 from app.api.endpoints import assets, alarms, sensors, history
 from app.api.endpoints import settings as settings_router
+from app.api.endpoints import pch as pch_router
 from app.services.sensor_service import sensor_service
 from app.ingestion.mqtt_client import mqtt_client
 from app.ingestion.serial_reader import serial_reader
 from app.ingestion.modbus_reader import modbus_reader
+from app.tasks.offline_watcher import offline_watcher
+from app.ingestion.pch_poller import pch_poller
 import asyncio
 import json
 
@@ -30,6 +33,10 @@ async def lifespan(app: FastAPI):
     if settings.MODBUS_ENABLED:
         tasks.append(asyncio.create_task(modbus_reader.start_tcp()))
         print("⚙️ Modbus activado")
+
+    tasks.append(asyncio.create_task(offline_watcher(interval_seconds=10)))
+    print("👁️ Offline watcher iniciado")
+    asyncio.create_task(pch_poller())
 
     yield
 
@@ -60,6 +67,7 @@ app.include_router(alarms.router,          prefix="/api/v1")
 app.include_router(sensors.router,         prefix="/api/v1")
 app.include_router(history.router,         prefix="/api/v1")
 app.include_router(settings_router.router, prefix="/api/v1")
+app.include_router(pch_router.router,      prefix="/api/v1")
 
 @app.websocket("/ws/{asset_id}")
 async def websocket_endpoint(

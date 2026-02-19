@@ -44,35 +44,44 @@ async def delete_asset(asset_id: int, db: AsyncSession = Depends(get_db)):
 
 # --- Configuración de protocolos ---
 class ProtocolConfig(BaseModel):
-    mqtt_enabled:    bool = False
-    mqtt_host:       Optional[str] = None
-    mqtt_port:       int = 1883
-    mqtt_user:       Optional[str] = None
-    mqtt_password:   Optional[str] = None
-    serial_enabled:  bool = False
-    serial_port:     Optional[str] = None
-    serial_baudrate: int = 115200
-    modbus_enabled:  bool = False
-    modbus_host:     Optional[str] = None
-    modbus_port:     int = 502
+    mqtt_enabled:         bool = False
+    mqtt_host:            Optional[str] = None
+    mqtt_port:            int = 1883
+    mqtt_user:            Optional[str] = None
+    mqtt_password:        Optional[str] = None
+    serial_enabled:       bool = False
+    serial_port:          Optional[str] = None
+    serial_baudrate:      int = 115200
+    modbus_enabled:       bool = False
+    modbus_host:          Optional[str] = None
+    modbus_port:          int = 502
+    pch_enabled:          bool = False
+    pch_host:             Optional[str] = None
+    pch_user:             Optional[str] = None
+    pch_password:         Optional[str] = None
+    pch_interval_minutes: int = 60
 
 @router.get("/protocols")
 async def get_protocols():
     return {
-        "mqtt_enabled":    settings.MQTT_ENABLED,
-        "mqtt_host":       settings.MQTT_HOST,
-        "mqtt_port":       settings.MQTT_PORT,
-        "serial_enabled":  settings.SERIAL_ENABLED,
-        "serial_port":     settings.SERIAL_PORT,
-        "serial_baudrate": settings.SERIAL_BAUDRATE,
-        "modbus_enabled":  settings.MODBUS_ENABLED,
-        "modbus_host":     settings.MODBUS_HOST,
-        "modbus_port":     settings.MODBUS_PORT,
+        "mqtt_enabled":         settings.MQTT_ENABLED,
+        "mqtt_host":            settings.MQTT_HOST,
+        "mqtt_port":            settings.MQTT_PORT,
+        "serial_enabled":       settings.SERIAL_ENABLED,
+        "serial_port":          settings.SERIAL_PORT,
+        "serial_baudrate":      settings.SERIAL_BAUDRATE,
+        "modbus_enabled":       settings.MODBUS_ENABLED,
+        "modbus_host":          settings.MODBUS_HOST,
+        "modbus_port":          settings.MODBUS_PORT,
+        "pch_enabled":          settings.PCH_ENABLED,
+        "pch_host":             settings.PCH_HOST,
+        "pch_user":             settings.PCH_USER,
+        "pch_password":         settings.PCH_PASSWORD,
+        "pch_interval_minutes": settings.PCH_INTERVAL_MINUTES,
     }
 
 @router.post("/protocols")
 async def update_protocols(data: ProtocolConfig):
-    # Escribe el .env con la nueva configuración
     env_lines = [
         f"MQTT_ENABLED={str(data.mqtt_enabled).lower()}",
         f"MQTT_HOST={data.mqtt_host or ''}",
@@ -85,10 +94,34 @@ async def update_protocols(data: ProtocolConfig):
         f"MODBUS_ENABLED={str(data.modbus_enabled).lower()}",
         f"MODBUS_HOST={data.modbus_host or ''}",
         f"MODBUS_PORT={data.modbus_port}",
+        f"PCH_ENABLED={str(data.pch_enabled).lower()}",
+        f"PCH_HOST={data.pch_host or 'pchcloud'}",
+        f"PCH_USER={data.pch_user or ''}",
+        f"PCH_PASSWORD={data.pch_password or ''}",
+        f"PCH_INTERVAL_MINUTES={data.pch_interval_minutes}",
     ]
     with open(".env", "w") as f:
         f.write("\n".join(env_lines))
-    return {"message": "Configuración guardada. Reinicia el servidor para aplicar cambios."}
+
+    # Aplicar en memoria inmediatamente — sin reiniciar
+    settings.MQTT_ENABLED         = data.mqtt_enabled
+    settings.MQTT_HOST            = data.mqtt_host or ''
+    settings.MQTT_PORT            = data.mqtt_port
+    settings.MQTT_USER            = data.mqtt_user or ''
+    settings.MQTT_PASSWORD        = data.mqtt_password or ''
+    settings.SERIAL_ENABLED       = data.serial_enabled
+    settings.SERIAL_PORT          = data.serial_port or ''
+    settings.SERIAL_BAUDRATE      = data.serial_baudrate
+    settings.MODBUS_ENABLED       = data.modbus_enabled
+    settings.MODBUS_HOST          = data.modbus_host or ''
+    settings.MODBUS_PORT          = data.modbus_port
+    settings.PCH_ENABLED          = data.pch_enabled
+    settings.PCH_HOST             = data.pch_host or 'pchcloud'
+    settings.PCH_USER             = data.pch_user or ''
+    settings.PCH_PASSWORD         = data.pch_password or ''
+    settings.PCH_INTERVAL_MINUTES = data.pch_interval_minutes
+
+    return {"message": "Configuración guardada y aplicada."}
 
 # --- Estado del sistema ---
 @router.get("/status")

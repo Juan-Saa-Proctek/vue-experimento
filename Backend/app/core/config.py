@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     MODBUS_ENABLED: bool = False
     MODBUS_HOST:    Optional[str] = None  # TCP
     MODBUS_PORT:    int  = 502
+    #Servidor PCH (opcional)
+    PCH_ENABLED:          bool = False
+    PCH_HOST:             str  = "pchcloud"
+    PCH_USER:             str  = ""
+    PCH_PASSWORD:         str  = ""
+    PCH_INTERVAL_MINUTES: int  = 60
 
     class Config:
         env_file = ".env"

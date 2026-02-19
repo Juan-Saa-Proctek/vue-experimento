@@ -27,6 +27,24 @@ class AlarmService:
         await db.refresh(alarm)
         return alarm
 
+    async def create_if_not_active(self, db: AsyncSession, data: AlarmCreate) -> Optional[AlarmDB]:
+        existing = await self.get_active_by_asset_severity(
+            db, data.asset_id, data.severity
+        )
+        if existing:
+            return existing  # Ya existe, no duplicar
+        return await self.create(db, data)
+
+    async def get_active_by_asset_severity(self, db: AsyncSession, asset_id: int, severity: str) -> Optional[AlarmDB]:
+        result = await db.execute(
+            select(AlarmDB).where(
+                AlarmDB.asset_id == asset_id,
+                AlarmDB.severity == severity,
+                AlarmDB.active == True,
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def resolve(self, db: AsyncSession, alarm_id: int) -> Optional[AlarmDB]:
         result = await db.execute(select(AlarmDB).where(AlarmDB.id == alarm_id))
         alarm = result.scalar_one_or_none()

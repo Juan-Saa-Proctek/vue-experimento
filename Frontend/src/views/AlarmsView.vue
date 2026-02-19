@@ -1,83 +1,82 @@
 <template>
   <div class="alarms-view">
 
-    <!-- Resumen -->
-    <div class="alarms-summary">
-      <div class="summary-card critical">
-        <span class="summary-count">{{ criticalCount }}</span>
-        <span class="summary-label">Críticas</span>
-      </div>
-      <div class="summary-card warning">
-        <span class="summary-count">{{ warningCount }}</span>
-        <span class="summary-label">Advertencias</span>
-      </div>
-      <div class="summary-card resolved">
-        <span class="summary-count">{{ resolvedCount }}</span>
-        <span class="summary-label">Resueltas</span>
-      </div>
-    </div>
+    <LoadingSpinner v-if="alarmsStore.loading" message="Cargando alarmas..." />
 
-    <!-- Filtros -->
-    <div class="filters">
-      <button
-        v-for="f in filters"
-        :key="f.key"
-        class="filter-btn"
-        :class="{ active: activeFilter === f.key }"
-        @click="activeFilter = f.key"
-      >
-        {{ f.label }}
-      </button>
-    </div>
+    <ErrorState
+      v-else-if="alarmsStore.error"
+      :message="alarmsStore.error"
+      retryable
+      @retry="alarmsStore.fetchAlarms"
+    />
 
-    <!-- Lista de alarmas -->
-    <div class="alarms-table">
-      <div class="table-header">
-        <span>Severidad</span>
-        <span>Equipo</span>
-        <span>Mensaje</span>
-        <span>Valor RMS</span>
-        <span>Fecha</span>
-        <span>Estado</span>
-      </div>
+    <template v-else>
 
-      <div v-if="filteredAlarms.length === 0" class="empty-state">
-        No hay alarmas registradas.
-      </div>
-
-      <div
-        v-for="alarm in filteredAlarms"
-        :key="alarm.id"
-        class="table-row"
-        :class="alarm.severity"
-      >
-        <div class="severity-cell">
-          <div class="severity-dot" :class="alarm.severity"></div>
-          <span>{{ severityLabel[alarm.severity] }}</span>
+      <!-- Resumen -->
+      <div class="alarms-summary">
+        <div class="summary-card critical">
+          <span class="summary-count">{{ criticalCount }}</span>
+          <span class="summary-label">Críticas</span>
         </div>
-        <div class="asset-cell">
-          <span class="asset-tag-small">{{ alarm.assetTag }}</span>
-          <span class="asset-name-small">{{ alarm.assetName }}</span>
+        <div class="summary-card warning">
+          <span class="summary-count">{{ warningCount }}</span>
+          <span class="summary-label">Advertencias</span>
         </div>
-        <div class="message-cell">{{ alarm.message }}</div>
-        <div class="rms-cell" :class="alarm.severity">{{ alarm.rmsValue }} mm/s</div>
-        <div class="date-cell">{{ formatDate(alarm.timestamp) }}</div>
-        <div class="status-cell">
-          <span v-if="alarm.active" class="active-badge">Activa</span>
-          <span v-else class="resolved-badge">Resuelta</span>
+        <div class="summary-card resolved">
+          <span class="summary-count">{{ resolvedCount }}</span>
+          <span class="summary-label">Resueltas</span>
         </div>
       </div>
-    </div>
+
+      <!-- Filtros -->
+      <div class="filters">
+        <button
+          v-for="f in filters"
+          :key="f.key"
+          class="filter-btn"
+          :class="{ active: activeFilter === f.key }"
+          @click="activeFilter = f.key"
+        >
+          {{ f.label }}
+        </button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="alarms-table">
+        <div class="table-header">
+          <span>Severidad</span>
+          <span>Equipo</span>
+          <span>Mensaje</span>
+          <span>Valor RMS</span>
+          <span>Fecha</span>
+          <span>Estado</span>
+        </div>
+
+        <div v-if="filteredAlarms.length === 0" class="empty-state">
+          No hay alarmas registradas.
+        </div>
+
+        <AlarmsTableRow
+          v-for="alarm in filteredAlarms"
+          :key="alarm.id"
+          :alarm="alarm"
+          :formatDate="formatDate"
+        />
+      </div>
+
+    </template>
 
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAlarmsStore } from '../stores/alarmsStore.js'
+import LoadingSpinner  from '../components/common/LoadingSpinner.vue'
+import ErrorState      from '../components/common/ErrorState.vue'
+import AlarmsTableRow  from '../components/common/AlarmsTableRow.vue'
 
 const alarmsStore = useAlarmsStore()
-
 const activeFilter = ref('all')
 
 const filters = [
@@ -87,11 +86,6 @@ const filters = [
   { key: 'warning',  label: 'Advertencias' },
   { key: 'resolved', label: 'Resueltas' },
 ]
-
-const severityLabel = {
-  critical: 'Crítico',
-  warning:  'Advertencia'
-}
 
 const filteredAlarms = computed(() => {
   const all = alarmsStore.alarms
@@ -117,6 +111,8 @@ function formatDate(iso) {
     hour: '2-digit', minute: '2-digit'
   })
 }
+
+onMounted(() => alarmsStore.fetchAlarms())
 </script>
 
 <style scoped>
@@ -202,99 +198,6 @@ function formatDate(iso) {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--color-text-muted);
-}
-
-.table-row {
-  display: grid;
-  grid-template-columns: 130px 180px 1fr 120px 160px 100px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--color-surface2);
-  align-items: center;
-  transition: background 0.2s;
-}
-
-.table-row:hover {
-  background-color: rgba(255,255,255,0.03);
-}
-
-.table-row.critical {
-  border-left: 3px solid var(--color-critical);
-}
-
-.table-row.warning {
-  border-left: 3px solid var(--color-warning);
-}
-
-.severity-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--color-text);
-}
-
-.severity-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.severity-dot.critical { background-color: var(--color-critical); }
-.severity-dot.warning  { background-color: var(--color-warning); }
-
-.asset-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.asset-tag-small {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-text);
-  font-family: monospace;
-}
-
-.asset-name-small {
-  font-size: 11px;
-  color: var(--color-text-muted);
-}
-
-.message-cell {
-  font-size: 13px;
-  color: var(--color-text);
-}
-
-.rms-cell {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.rms-cell.critical { color: var(--color-critical); }
-.rms-cell.warning  { color: var(--color-warning); }
-
-.date-cell {
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-
-.active-badge {
-  background-color: rgba(255,68,68,0.15);
-  color: var(--color-critical);
-  padding: 3px 10px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.resolved-badge {
-  background-color: rgba(0,200,81,0.15);
-  color: var(--color-normal);
-  padding: 3px 10px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .empty-state {

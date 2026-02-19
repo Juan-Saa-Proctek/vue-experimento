@@ -1,44 +1,62 @@
 <template>
   <div class="dashboard">
 
-    <!-- Resumen superior -->
-    <div class="summary-bar">
-      <div
-        v-for="item in summaryItems"
-        :key="item.key"
-        class="summary-item"
-        :class="{ active: filterStatus === item.key }"
-        @click="assetsStore.setFilter(item.key)"
-      >
-        <span class="summary-count" :style="{ color: item.color }">{{ item.count }}</span>
-        <span class="summary-label">{{ item.label }}</span>
+    <!-- Estado de carga -->
+    <LoadingSpinner v-if="assetsStore.loading" message="Cargando equipos..." />
+
+    <!-- Estado de error -->
+    <ErrorState
+      v-else-if="assetsStore.error"
+      :message="assetsStore.error"
+      retryable
+      @retry="assetsStore.fetchAssets"
+    />
+
+    <!-- Contenido normal -->
+    <template v-else>
+
+      <!-- Resumen superior -->
+      <div class="summary-bar">
+        <div
+          v-for="item in summaryItems"
+          :key="item.key"
+          class="summary-item"
+          :class="{ active: filterStatus === item.key }"
+          @click="assetsStore.setFilter(item.key)"
+        >
+          <span class="summary-count" :style="{ color: item.color }">{{ item.count }}</span>
+          <span class="summary-label">{{ item.label }}</span>
+        </div>
       </div>
-    </div>
 
-    <!-- Grid de equipos -->
-    <div v-if="filteredAssets.length > 0" class="assets-grid">
-      <AssetCard
-        v-for="asset in filteredAssets"
-        :key="asset.id"
-        :asset="asset"
-      />
-    </div>
+      <!-- Grid de equipos -->
+      <div v-if="filteredAssets.length > 0" class="assets-grid">
+        <AssetCard
+          v-for="asset in filteredAssets"
+          :key="asset.id"
+          :asset="asset"
+        />
+      </div>
 
-    <div v-else class="empty-state">
-      No hay equipos con ese estado.
-    </div>
+      <div v-else class="empty-state">
+        No hay equipos con ese estado.
+      </div>
+
+    </template>
 
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAssetsStore } from '../stores/assetsStore.js'
 import AssetCard from '../components/assets/AssetCard.vue'
+import LoadingSpinner from '../components/common/LoadingSpinner.vue'
+import ErrorState from '../components/common/ErrorState.vue'
 
 const assetsStore = useAssetsStore()
 const filteredAssets = computed(() => assetsStore.filteredAssets)
-const filterStatus = computed(() => assetsStore.filterStatus)
+const filterStatus   = computed(() => assetsStore.filterStatus)
 
 const summaryItems = computed(() => [
   { key: 'all',      label: 'Todos',        count: assetsStore.summary.total,    color: 'var(--color-text)' },
@@ -47,6 +65,8 @@ const summaryItems = computed(() => [
   { key: 'critical', label: 'Crítico',      count: assetsStore.summary.critical, color: 'var(--color-critical)' },
   { key: 'offline',  label: 'Desconectado', count: assetsStore.summary.offline,  color: 'var(--color-offline)' },
 ])
+
+onMounted(() => assetsStore.fetchAssets())
 </script>
 
 <style scoped>
@@ -63,8 +83,8 @@ const summaryItems = computed(() => [
 }
 
 .summary-item {
-  background-color: var(--color-surface3); /* Este es el color del Fondo de los Cuadros de Filtro */
-  border: 1px solid var(--color-surface); /*  */
+  background-color: var(--color-surface3);
+  border: 1px solid var(--color-surface);
   border-radius: 10px;
   padding: 14px 24px;
   display: flex;
@@ -79,7 +99,7 @@ const summaryItems = computed(() => [
 .summary-item:hover,
 .summary-item.active {
   border-color: var(--color-accent);
-  background-color: var(--color-surface4); /* Este es el color del Fondo de los Cuadros de Filtro al Hover */
+  background-color: var(--color-surface4);
 }
 
 .summary-count {

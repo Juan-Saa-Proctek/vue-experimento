@@ -1,167 +1,117 @@
 <template>
-  <div class="asset-detail" v-if="asset">
+  <div class="asset-detail">
+    <LoadingSpinner v-if="assetsStore.loading" message="Cargando activo..." />
+    <ErrorState
+      v-else-if="assetsStore.error"
+      :message="assetsStore.error"
+      retryable
+      @retry="assetsStore.fetchAssets"
+    />
+    <template v-else-if="asset">
 
-    <!-- Header del activo -->
-    <div class="asset-header">
-      <div class="asset-header-left">
-        <button class="back-btn" @click="router.back()">← Volver</button>
-        <div>
-          <div class="asset-tag-title">{{ asset.tag }}</div>
-          <div class="asset-name-title">{{ asset.name }}</div>
-        </div>
-      </div>
-      <div class="asset-header-right">
-        <div class="rms-display" :class="asset.status">
-          <span class="rms-value">{{ asset.rmsActual.toFixed(2) }}</span>
-          <span class="rms-unit">mm/s RMS</span>
-        </div>
-        <StatusBadge :status="asset.status" />
-      </div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="tab-btn"
-        :class="{ active: activeTab === tab.key }"
-        @click="activeTab = tab.key"
-      >
-        <component :is="tab.icon" v-if="tab.icon" :size="15" />
-        {{ tab.label }}
-      </button>
-    </div>
-
-    <!-- Tab: Info -->
-    <div v-if="activeTab === 'info'" class="tab-content">
-      <div class="info-grid">
-        <div class="info-card">
-          <h3>Datos de Placa</h3>
-          <div class="info-rows">
-            <AssetInfoRow label="Tag"          :value="asset.tag" />
-            <AssetInfoRow label="Nombre"       :value="asset.name" />
-            <AssetInfoRow label="Tipo"         :value="asset.type" />
-            <AssetInfoRow label="Ubicación"    :value="asset.location" />
-            <AssetInfoRow label="RPM Nominal"  :value="`${asset.rpmNominal} RPM`" />
-            <AssetInfoRow label="Límite RMS"   :value="`${asset.rmsLimit} mm/s`" />
+      <!-- Header del activo -->
+      <div class="asset-header">
+        <div class="asset-header-left">
+          <button class="back-btn" @click="router.back()">← Volver</button>
+          <div>
+            <div class="asset-tag-title">{{ asset.tag }}</div>
+            <div class="asset-name-title">{{ asset.name }}</div>
           </div>
         </div>
-
-        <div class="info-card">
-          <h3>Estado Actual</h3>
-          <div class="info-rows">
-            <AssetInfoRow
-              label="RMS Actual"
-              :value="`${asset.rmsActual.toFixed(2)} mm/s`"
-              :highlight="asset.status"
-            />
-            <AssetInfoRow
-              label="% del Límite"
-              :value="`${rmsPercentage.toFixed(1)}%`"
-              :highlight="asset.status"
-            />
-            <AssetInfoRow label="Última actualización" :value="formatDate(asset.lastUpdate)" />
+        <div class="asset-header-right">
+          <div class="rms-display" :class="asset.status">
+            <span class="rms-value">{{ asset.rmsActual.toFixed(2) }}</span>
+            <span class="rms-unit">mm/s RMS</span>
           </div>
-          <div class="status-row">
-            <span class="info-label">Estado</span>
-            <StatusBadge :status="asset.status" />
-          </div>
+          <StatusBadge :status="asset.status" />
         </div>
       </div>
-    </div>
 
-    <!-- Tab: Monitoreo en Vivo -->
-    <div v-if="activeTab === 'live'" class="tab-content">
-      <div class="charts-grid">
-        <div class="chart-card">
-          <div class="chart-card-header">
-            <h3>Forma de Onda en Tiempo Real</h3>
-            <span class="live-indicator">● EN VIVO</span>
-          </div>
-          <WaveformChart :data="waveformData" />
-        </div>
-        <div class="chart-card">
-          <div class="chart-card-header">
-            <h3>Espectro de Frecuencias (FFT)</h3>
-          </div>
-          <FFTChart :data="fftData" :frequencies="fftFrequencies" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab: Tendencia -->
-    <div v-if="activeTab === 'trend'" class="tab-content">
-      <div class="chart-card">
-        <div class="chart-card-header">
-          <h3>Tendencia RMS Histórica</h3>
-        </div>
-        <TrendChart :data="trendData" :limit="asset.rmsLimit" />
-      </div>
-    </div>
-
-    <!-- Tab: Alarmas -->
-    <div v-if="activeTab === 'alarms'" class="tab-content">
-      <div class="alarms-list">
-        <div v-if="assetAlarms.length === 0" class="empty-state">
-          No hay alarmas registradas para este equipo.
-        </div>
-        <div
-          v-for="alarm in assetAlarms"
-          :key="alarm.id"
-          class="alarm-row"
-          :class="alarm.severity"
+      <!-- Tabs -->
+      <div class="tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="tab-btn"
+          :class="{ active: activeTab === tab.key }"
+          @click="activeTab = tab.key"
         >
-          <div class="alarm-severity-bar"></div>
-          <div class="alarm-info">
-            <div class="alarm-message">{{ alarm.message }}</div>
-            <div class="alarm-meta">{{ formatDate(alarm.timestamp) }} · RMS: {{ alarm.rmsValue }} mm/s</div>
-          </div>
-          <StatusBadge :status="alarm.severity" />
-        </div>
+          <component :is="tab.icon" v-if="tab.icon" :size="15" />
+          {{ tab.label }}
+        </button>
       </div>
-    </div>
 
-  </div>
+      <!-- Contenido de tabs -->
+      <AssetInfoTab
+        v-if="activeTab === 'info'"
+        :asset="asset"
+        :rmsPercentage="rmsPercentage"
+        :formatDate="formatDate"
+      />
+      <AssetLiveTab
+        v-if="activeTab === 'live'"
+        :waveformData="waveformData"
+        :fftData="fftData"
+        :fftFrequencies="fftFrequencies"
+      />
+      <AssetTrendTab
+        v-if="activeTab === 'trend'"
+        :trendData="trendData"
+        :rmsLimit="asset.rmsLimit"
+      />
+      <AssetAlarmsTab
+        v-if="activeTab === 'alarms'"
+        :alarms="assetAlarms"
+        :formatDate="formatDate"
+      />
 
-  <div v-else class="not-found">
-    Equipo no encontrado.
+    </template>
+    <ErrorState v-else message="Equipo no encontrado." />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAsset } from '../composables/useAsset.js'
-import { useChartData } from '../composables/useChartData.js'
-import { useRealtime } from '../composables/useRealtime.js'
-import StatusBadge from '../components/common/StatusBadge.vue'
-import AssetInfoRow from '../components/assets/AssetInfoRow.vue'
-import WaveformChart from '../components/charts/WaveformChart.vue'
-import FFTChart from '../components/charts/FFTChart.vue'
-import TrendChart from '../components/charts/TrendChart.vue'
+  import { ref, onUnmounted } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { useAssetsStore } from '../stores/assetsStore.js'
+  import { useAsset } from '../composables/useAsset.js'
+  import { useChartData } from '../composables/useChartData.js'
+  import { useRealtime } from '../composables/useRealtime.js'
+  import { BookText, Activity, TrendingUp, BellDot } from 'lucide-vue-next'
+  import StatusBadge    from '../components/common/StatusBadge.vue'
+  import LoadingSpinner from '../components/common/LoadingSpinner.vue'
+  import ErrorState     from '../components/common/ErrorState.vue'
+  import AssetInfoTab   from '../components/assets/AssetInfoTab.vue'
+  import AssetLiveTab   from '../components/assets/AssetLiveTab.vue'
+  import AssetTrendTab  from '../components/assets/AssetTrendTab.vue'
+  import AssetAlarmsTab from '../components/assets/AssetAlarmsTab.vue'
 
-import { BookText, Activity, TrendingUp, BellDot } from 'lucide-vue-next';
+  const props = defineProps({ id: { type: String, required: true } })
+  const router = useRouter()
+  const assetsStore = useAssetsStore()
 
-const props = defineProps({ id: { type: String, required: true } })
-const router = useRouter()
+  const { asset, assetAlarms, rmsPercentage, formatDate } = useAsset(props.id)
+  const {
+    waveformData, fftData, fftFrequencies, trendData,
+    initAll, refreshLive, disconnectWebSocket
+  } = useChartData(asset)
 
-// Composables — toda la lógica vive aquí afuera
-const { asset, assetAlarms, rmsPercentage, formatDate } = useAsset(props.id)
-const { waveformData, fftData, fftFrequencies, trendData, initAll, refreshLive } = useChartData(asset)
+  // Inicia con data simulada y conecta WebSocket
+  initAll(Number(props.id))
 
-// Inicia data y refresca gráficas en vivo cada 2 segundos
-initAll()
-useRealtime(refreshLive, 2000)
+  // Fallback: si el WS no está activo refresca cada 2s con data simulada
+  useRealtime(refreshLive, 2000)
 
-const activeTab = ref('info')
+  // Desconecta el WS al salir de la vista
+  onUnmounted(() => disconnectWebSocket())
 
-const tabs = [
-  { key: 'info',   label: 'Información' , icon: BookText},
-  { key: 'live',   label: 'Monitoreo en Vivo', icon: Activity },
-  { key: 'trend',  label: 'Tendencia', icon: TrendingUp },
-  { key: 'alarms', label: 'Alarmas', icon: BellDot },
-]
+  const activeTab = ref('info')
+  const tabs = [
+    { key: 'info',   label: 'Información',       icon: BookText },
+    { key: 'live',   label: 'Monitoreo en Vivo',  icon: Activity },
+    { key: 'trend',  label: 'Tendencia',           icon: TrendingUp },
+    { key: 'alarms', label: 'Alarmas',             icon: BellDot },
+  ]
 </script>
 
 <style scoped>
@@ -267,7 +217,7 @@ const tabs = [
   font-weight: 500;
   border-radius: 8px;
   transition: all 0.2s;
-  margin-bottom: 0; /* ← quita el margin-bottom anterior */
+  margin-bottom: 0;
 }
 
 .tab-btn:hover {
@@ -276,143 +226,9 @@ const tabs = [
 }
 
 .tab-btn.active {
-  background-color: var(--color-surface4);
-  color: var(--color-text-dark);
-  border-bottom: none; /* ← elimina el borde inferior anterior */
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.info-card {
-  background-color: var(--color-surface4);
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid var(--color-surface);
-}
-
-.info-card h3 {
-  color: var(--color-text-dark);
-  font-size: 15px;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-surface4);
-}
-
-.info-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.status-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background-color: var(--color-surfac4);
-  border: 1px solid var(--color-surface);
-  transition: background 0.2s;
-}
-
-.status-row:hover {
   background-color: var(--color-surface3);
-}
-
-.info-label {
-  font-size: 12px;
-  font-weight: 600;
   color: var(--color-text-dark);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.charts-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.chart-card {
-  background-color: var(--color-surface4);
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid var(--color-surface);
-}
-
-.chart-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.chart-card-header h3 {
-  color: var(--color-text-dark);
-  font-size: 15px;
-}
-
-.live-indicator {
-  font-size: 12px;
-  color: var(--color-normal);
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-.alarms-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.alarm-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background-color: var(--color-surface4);
-  border-radius: 10px;
-  padding: 14px 16px;
-  border: 1px solid var(--color-surface);
-}
-
-.alarm-severity-bar {
-  width: 4px;
-  height: 40px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.alarm-row.warning  .alarm-severity-bar { background-color: var(--color-warning); }
-.alarm-row.critical .alarm-severity-bar { background-color: var(--color-critical); }
-
-.alarm-info { flex: 1; }
-
-.alarm-message {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-dark);
-  margin-bottom: 4px;
-}
-
-.alarm-meta {
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-
-.empty-state, .not-found {
-  text-align: center;
-  color: var(--color-text-muted);
-  padding: 60px;
-  font-size: 16px;
+  border-bottom: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 </style>

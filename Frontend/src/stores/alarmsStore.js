@@ -1,44 +1,53 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { mockAlarms } from '../mock/alarms.mock.js'
+import { alarmsAPI } from '../services/api.js'
 
 export const useAlarmsStore = defineStore('alarms', () => {
-  const alarms = ref([...mockAlarms])
+  const alarms       = ref([])
   const systemOnline = ref(true)
-  const loading = ref(false)
-  const error = ref(null)
+  const loading      = ref(false)
+  const error        = ref(null)
 
   const activeCount = computed(() =>
     alarms.value.filter(a => a.active).length
   )
 
-  function addAlarm(alarm) {
-    alarms.value.unshift({ ...alarm, id: Date.now(), active: true })
+  async function fetchAlarms(activeOnly = false) {
+    loading.value = true
+    error.value   = null
+    try {
+      const data = await alarmsAPI.getAll(activeOnly)
+      alarms.value = data.map(a => ({
+        id:        a.id,
+        assetId:   a.asset_id,
+        assetTag:  a.asset_tag,
+        assetName: a.asset_name,
+        severity:  a.severity,
+        message:   a.message,
+        rmsValue:  a.rms_value,
+        active:    a.active,
+        timestamp: a.timestamp
+      }))
+    } catch (e) {
+      error.value = e.message
+      systemOnline.value = false
+    } finally {
+      loading.value = false
+    }
   }
 
-  function resolveAlarm(id) {
-    const alarm = alarms.value.find(a => a.id === id)
-    if (alarm) alarm.active = false
+  async function resolveAlarm(alarmId) {
+    try {
+      await alarmsAPI.resolve(alarmId)
+      await fetchAlarms()
+    } catch (e) {
+      error.value = e.message
+    }
   }
 
   function setSystemOnline(status) {
     systemOnline.value = status
   }
 
-  async function fetchAlarms() {
-    loading.value = true
-    error.value = null
-    try {
-      // TODO: reemplazar por llamada real
-      // const data = await api.getAlarms()
-      // alarms.value = data
-      alarms.value = [...mockAlarms]
-    } catch (e) {
-      error.value = 'No se pudieron cargar las alarmas'
-    } finally {
-      loading.value = false
-    }
-  }
-
-  return { alarms, systemOnline, activeCount, loading, error, addAlarm, resolveAlarm, setSystemOnline, fetchAlarms }
+  return { alarms, systemOnline, activeCount, loading, error, fetchAlarms, resolveAlarm, setSystemOnline }
 })

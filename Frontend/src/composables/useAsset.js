@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAssetsStore } from '../stores/assetsStore.js'
 import { useAlarmsStore } from '../stores/alarmsStore.js'
 
@@ -36,6 +36,11 @@ export function useAsset(assetId) {
       hour: '2-digit', minute: '2-digit'
     })
   }
+
+  onMounted(async () => {
+    if (assetsStore.assets.length === 0) await assetsStore.fetchAssets()
+    await alarmsStore.fetchAlarms()
+  })
 
   return { asset, assetAlarms, rmsPercentage, statusColor, formatDate }
 }

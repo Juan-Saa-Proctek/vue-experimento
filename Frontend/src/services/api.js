@@ -39,7 +39,7 @@ export const sensorsAPI = {
 }
 
 export const historyAPI = {
-  getTrend:   (assetId, hours = 24) => http.get(`/history/${assetId}/trend?hours=${hours}`),
+  getTrend:   (assetId, hours = 24, limit = 1000) => http.get(`/history/${assetId}/trend?hours=${hours}&limit=${limit}`),
   getSummary: (assetId, hours = 24) => http.get(`/history/${assetId}/summary?hours=${hours}`),
   getFFT:     (assetId, ts)         => http.get(`/history/${assetId}/fft?timestamp=${ts}`),
 }

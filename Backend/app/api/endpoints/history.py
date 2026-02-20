@@ -10,12 +10,17 @@ router = APIRouter(prefix="/history", tags=["history"])
 
 
 @router.get("/{asset_id}/trend", response_model=List[SensorReadingResponse])
-async def get_trend(asset_id: int, hours: int = 24, db: AsyncSession = Depends(get_db)):
-    return await history_service.get_trend(db, asset_id, hours)
+async def get_trend(asset_id: int, hours: int = 24, limit: int = 1000,  db: AsyncSession = Depends(get_db)):
+    return await history_service.get_trend(db, asset_id, hours, limit)  # 🔧 Pasar limit
 
 
 @router.get("/{asset_id}/fft", response_model=HistoricalFFTResponse)
-async def get_historical_fft(asset_id: int,timestamp: datetime,tolerance: int = 5,db: AsyncSession = Depends(get_db),):
+async def get_historical_fft(
+    asset_id: int,
+    timestamp: datetime,
+    tolerance: int = 5,
+    db: AsyncSession = Depends(get_db)
+):
     result = await history_service.get_fft_at_timestamp(
         db, asset_id, timestamp, tolerance
     )
@@ -26,6 +31,11 @@ async def get_historical_fft(asset_id: int,timestamp: datetime,tolerance: int = 
         )
     return result
 
+
 @router.get("/{asset_id}/summary")
-async def get_summary(asset_id: int, hours: int = 24, db: AsyncSession = Depends(get_db)):
+async def get_summary(
+    asset_id: int, 
+    hours: int = 24, 
+    db: AsyncSession = Depends(get_db)
+):
     return await history_service.get_summary(db, asset_id, hours)

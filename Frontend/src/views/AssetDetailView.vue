@@ -129,14 +129,14 @@
   const showFFTModal = ref(false)
   const modalPoint   = ref(null)
 
-  async function onTrendPointClick({ time, value }) {
-    // Busca FFT histórica en el backend para ese timestamp
-    const historical = await fetchHistoricalFFT(Number(props.id), time)
+  async function onTrendPointClick({ time, value, timestamp }) {  
+   
+    const historical = await fetchHistoricalFFT(Number(props.id), timestamp)
 
     modalPoint.value = {
       time,
       value,
-      fftData:     historical.fftData,      // real o fallback al actual
+      fftData: historical.fftData,
       frequencies: historical.frequencies,
     }
     showFFTModal.value = true

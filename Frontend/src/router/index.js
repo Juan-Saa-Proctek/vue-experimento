@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import DashboardView from '../views/DashboardView.vue'
-import AssetDetailView from '../views/AssetDetailView.vue'
-import AlarmsView from '../views/AlarmsView.vue'
-import SettingsView from '../views/SettingsView.vue'
+
+const DashboardView = () => import('../views/DashboardView.vue')
+const AlarmsView = () => import('../views/AlarmsView.vue')
+const AssetDetailView = () => import('../views/AssetDetailView.vue')
+const SettingsView = () => import('../views/SettingsView.vue')
 
 const routes = [
   {

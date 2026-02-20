@@ -2,14 +2,14 @@
   <div class="settings-section">
     <h3 class="section-title">Gestión de Equipos</h3>
 
-    <LoadingSpinner v-if="loading" message="Cargando equipos..." />
-    <ErrorState v-else-if="error" :message="error" retryable @retry="fetchAssets" />
+    <LoadingSpinner v-if="assetsStore.loading" message="Cargando equipos..." />
+    <ErrorState v-else-if="assetsStore.error" :message="assetsStore.error" retryable @retry="assetsStore.fetchAssets" />
 
     <template v-else>
       <!-- Búsqueda y filtros -->
       <AssetSearchBar 
-        v-model="searchQuery"
-        v-model:filterStatus="filterStatus"
+        v-model="assetsStore.searchQuery"
+        v-model:filterStatus="assetsStore.filterStatus"
         @update:modelValue="pagination.resetPage()"
         @update:filterStatus="pagination.resetPage()"
       />
@@ -17,8 +17,8 @@
       <!-- Header con contador y botón -->
       <div class="management-header">
         <span class="assets-count">
-          {{ filteredAssets.length }} equipo(s) 
-          {{ searchQuery || filterStatus ? 'encontrado(s)' : 'registrados' }}
+          {{ assetsStore.filteredAssets.length }} equipo(s) 
+          {{ assetsStore.searchQuery || assetsStore.filterStatus ? 'encontrado(s)' : 'registrados' }}
         </span>
         <button class="add-btn" @click="showForm = !showForm">
           <CircleX v-if="showForm" :size="16" />
@@ -50,7 +50,7 @@
           @delete="handleDelete(asset.id)"
         />
 
-        <div v-if="filteredAssets.length === 0" class="empty-state">
+        <div v-if="assetsStore.filteredAssets.length === 0" class="empty-state">
           <p>No se encontraron equipos</p>
         </div>
       </div>
@@ -80,9 +80,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { CirclePlus, CircleX, CircleArrowLeft, CircleArrowRight } from 'lucide-vue-next'
-import { useAssetManagement } from '../../composables/useAssetManagement.js'
+import { useAssetsStore } from '../../stores/assetsStore.js'
 import { usePagination } from '../../composables/usePagination.js'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import ErrorState from '../common/ErrorState.vue'
@@ -92,20 +92,14 @@ import AssetForm from '../assets/AssetForm.vue'
 
 const confirm = inject('confirm')
 
-// Composables
-const {
-  filteredAssets,
-  loading,
-  error,
-  searchQuery,
-  filterStatus,
-  fetchAssets,
-  createAsset,
-  updateAsset,
-  deleteAsset
-} = useAssetManagement()
 
-const pagination = usePagination(filteredAssets, 5)
+const assetsStore = useAssetsStore()
+
+
+const pagination = usePagination(
+  computed(() => assetsStore.filteredAssets),
+  5
+)
 
 // Estado local del componente
 const showForm = ref(false)
@@ -126,8 +120,7 @@ const newAsset = ref({
 async function handleCreate() {
   saving.value = true
   try {
-    await createAsset(newAsset.value)
-    
+    await assetsStore.createAsset(newAsset.value)
     newAsset.value = {
       tag: '',
       name: '',
@@ -156,17 +149,16 @@ function cancelEdit() {
 
 async function handleSave() {
   try {
-    await updateAsset(editingId.value, {
+    await assetsStore.updateAsset(editingId.value, {
       name: editForm.value.name,
       type: editForm.value.type,
       location: editForm.value.location,
       rpm_nominal: editForm.value.rpm_nominal,
       rms_limit: editForm.value.rms_limit
     })
-    
     cancelEdit()
   } catch (e) {
-
+    
   }
 }
 
@@ -182,13 +174,13 @@ async function handleDelete(id) {
   if (!confirmed) return
   
   try {
-    await deleteAsset(id)
+    await assetsStore.deleteAsset(id)
   } catch (e) {
     
   }
 }
 
-onMounted(() => fetchAssets())
+onMounted(() => assetsStore.fetchAssets())
 </script>
 
 <style scoped>

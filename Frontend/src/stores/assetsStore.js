@@ -1,16 +1,35 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { assetsAPI } from '../services/api.js'
+import { useToast } from '../composables/useToast.js'
 
 export const useAssetsStore = defineStore('assets', () => {
-  const assets      = ref([])
+  const { success, error: showError } = useToast()
+  
+  const assets = ref([])
   const filterStatus = ref('all')
-  const loading     = ref(false)
-  const error       = ref(null)
+  const searchQuery = ref('')  
+  const loading = ref(false)
+  const error = ref(null)
 
   const filteredAssets = computed(() => {
-    if (filterStatus.value === 'all') return assets.value
-    return assets.value.filter(a => a.status === filterStatus.value)
+    let result = assets.value
+
+  
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase()
+      result = result.filter(a => 
+        a.tag.toLowerCase().includes(query) ||
+        a.name.toLowerCase().includes(query) ||
+        (a.location && a.location.toLowerCase().includes(query))
+      )
+    }
+
+    if (filterStatus.value && filterStatus.value !== 'all') {
+      result = result.filter(a => a.status === filterStatus.value)
+    }
+
+    return result
   })
 
   const summary = computed(() => ({
@@ -25,9 +44,13 @@ export const useAssetsStore = defineStore('assets', () => {
     filterStatus.value = status
   }
 
+  function setSearch(query) {
+    searchQuery.value = query
+  }
+
   async function fetchAssets() {
     loading.value = true
-    error.value   = null
+    error.value = null
     try {
       const data = await assetsAPI.getAll()
       // Normalizar campos snake_case → camelCase
@@ -45,24 +68,85 @@ export const useAssetsStore = defineStore('assets', () => {
       }))
     } catch (e) {
       error.value = e.message
+      showError(`Error al cargar equipos: ${e.message}`)
     } finally {
       loading.value = false
     }
   }
 
-  async function createAsset(data) {
+  async function createAsset(assetData) {
+    if (!assetData.tag || !assetData.name || !assetData.type) {
+      showError('Tag, nombre y tipo son obligatorios')
+      throw new Error('Tag, nombre y tipo son obligatorios')
+    }
+
     loading.value = true
-    error.value   = null
+    error.value = null
     try {
-      const created = await assetsAPI.create(data)
+      await assetsAPI.create(assetData)
       await fetchAssets()
-      return created
+      success('Equipo creado exitosamente')
     } catch (e) {
       error.value = e.message
+      showError(`Error al crear: ${e.message}`)
+      throw e
     } finally {
       loading.value = false
     }
   }
 
-  return { assets, filteredAssets, filterStatus, summary, loading, error, setFilter, fetchAssets, createAsset }
+  async function updateAsset(id, data) {
+    loading.value = true
+    error.value = null
+    try {
+      await assetsAPI.update(id, data)
+      
+      // Actualizar localmente
+      const index = assets.value.findIndex(a => a.id === id)
+      if (index !== -1) {
+        assets.value[index] = { ...assets.value[index], ...data }
+      }
+      
+      success('Cambios guardados')
+    } catch (e) {
+      error.value = e.message
+      showError(`Error al guardar: ${e.message}`)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteAsset(id) {
+    loading.value = true
+    error.value = null
+    try {
+      await assetsAPI.delete(id)
+      await fetchAssets()
+      success('Equipo eliminado')
+    } catch (e) {
+      error.value = e.message
+      showError(`Error al eliminar: ${e.message}`)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { 
+    assets, 
+    filteredAssets, 
+    filterStatus,
+    searchQuery,  
+    summary, 
+    loading, 
+    error, 
+
+    setFilter, 
+    setSearch,  
+    fetchAssets, 
+    createAsset,
+    updateAsset,  
+    deleteAsset   
+  }
 })

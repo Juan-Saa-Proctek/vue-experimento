@@ -23,19 +23,24 @@ def _regenerate_fft(rms: float):
 
 class HistoryService:
 
-    async def get_trend(self,db: AsyncSession,asset_id: int,hours: int = 24) -> List[SensorReadingDB]:
+    async def get_trend(self,db: AsyncSession,asset_id: int,hours: int = 24,limit: int = 1000) -> List[SensorReadingDB]:
         since = datetime.now() - timedelta(hours=hours)
+        
         result = await db.execute(
             select(SensorReadingDB)
             .where(
                 SensorReadingDB.asset_id == asset_id,
                 SensorReadingDB.timestamp >= since
             )
-            .order_by(SensorReadingDB.timestamp.asc())
+            .order_by(SensorReadingDB.timestamp.desc())  
+            .limit(limit)  
         )
-        return result.scalars().all()
+        
+        readings = result.scalars().all()
+        
+        return list(reversed(readings))
 
-    async def get_fft_at_timestamp(self,db: AsyncSession,asset_id: int,timestamp: datetime,tolerance_seconds: int = 5) -> Optional[HistoricalFFTResponse]:
+    async def get_fft_at_timestamp(self, db: AsyncSession, asset_id: int, timestamp: datetime, tolerance_seconds: int = 5) -> Optional[HistoricalFFTResponse]:
   
         since = timestamp - timedelta(seconds=tolerance_seconds)
         until = timestamp + timedelta(seconds=tolerance_seconds)
@@ -47,10 +52,7 @@ class HistoryService:
                 SensorReadingDB.timestamp >= since,
                 SensorReadingDB.timestamp <= until,
             )
-            .order_by(
-                # La más cercana al timestamp solicitado (SQLite compatible)
-                SensorReadingDB.timestamp.desc()
-            )
+            .order_by(SensorReadingDB.timestamp.desc())
             .limit(1)
         )
         reading = result.scalar_one_or_none()
@@ -74,7 +76,8 @@ class HistoryService:
         )
 
     async def get_summary(self, db: AsyncSession, asset_id: int, hours: int = 24):
-        readings = await self.get_trend(db, asset_id, hours)
+
+        readings = await self.get_trend(db, asset_id, hours)  
         if not readings:
             return {"min": 0, "max": 0, "avg": 0, "count": 0}
 

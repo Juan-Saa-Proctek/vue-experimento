@@ -9,7 +9,7 @@ class SensorReadingDB(Base):
     __tablename__ = "sensor_readings"
 
     id         = Column(Integer, primary_key=True, index=True)
-    asset_id   = Column(Integer, ForeignKey("assets.id"), nullable=False)
+    asset_id   = Column(Integer, ForeignKey("assets.id"), nullable=False, index=True)
     rms        = Column(Float, nullable=False)
     peak       = Column(Float, nullable=True)
     fft_data   = Column(Text, nullable=True)

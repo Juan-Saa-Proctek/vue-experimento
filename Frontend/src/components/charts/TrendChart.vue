@@ -16,11 +16,10 @@ const emit = defineEmits(['point-click'])
 
 function onPointClick(params) {
   if (params.componentType === 'series') {
-    emit('point-click', {
-      index: params.dataIndex,
-      time:  props.data[params.dataIndex]?.time,
-      value: params.value
-    })
+    const point = props.data[params.dataIndex]
+    if (point) {
+      emit('point-click', point) 
+    }
   }
 }
 

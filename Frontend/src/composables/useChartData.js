@@ -1,6 +1,11 @@
 import { ref } from 'vue'
-import { createAssetWebSocket, historyAPI } from '../services/api.js'  // ← agregado historyAPI
+import { createAssetWebSocket, historyAPI } from '../services/api.js'
+import { useMockData } from './useMockData.js'
 
+/**
+ * Composable para manejo de datos de gráficas en tiempo real
+ * Usa WebSocket para datos live, mock data como fallback
+ */
 export function useChartData(asset) {
   const waveformData   = ref([])
   const fftData        = ref([])
@@ -9,54 +14,31 @@ export function useChartData(asset) {
 
   let ws = null
 
-  function generateWaveform() {
-    const rms = asset.value?.rmsActual || 1
-    waveformData.value = Array.from({ length: 200 }, (_, i) =>
-      +(Math.sin(i * 0.15) * rms + (Math.random() - 0.5) * 0.3).toFixed(3)
-    )
-  }
+  // 🔧 SEPARADO: Mock data solo cuando sea necesario
+  const mockData = useMockData(asset)
 
-  function generateFFT() {
-    const bins = 64
-    const rms = asset.value?.rmsActual || 1
-    fftFrequencies.value = Array.from({ length: bins }, (_, i) =>
-      Math.round(i * (500 / bins))
-    )
-    fftData.value = Array.from({ length: bins }, (_, i) => {
-      const base = i < 5 ? rms * 0.8 : Math.random() * rms * 0.3
-      return +base.toFixed(3)
-    })
-  }
-
-  function generateTrend() {
-    const points = 20
-    const now = Date.now()
-    const rms = asset.value?.rmsActual || 1
-    trendData.value = Array.from({ length: points }, (_, i) => ({
-      time: new Date(now - (points - i) * 60000 * 5).toLocaleTimeString('es-CO', {
-        hour: '2-digit', minute: '2-digit'
-      }),
-      value: +(rms + (Math.random() - 0.5) * rms * 0.4).toFixed(2)
-    }))
-  }
-
+  // WebSocket connection
   function connectWebSocket(assetId) {
     if (ws) ws.close()
 
     ws = createAssetWebSocket(
       assetId,
       (data) => {
+        // Actualizar con datos reales del WebSocket
         if (data.waveform)    waveformData.value  = data.waveform
         if (data.fft_data)    fftData.value       = data.fft_data
         if (data.frequencies) fftFrequencies.value = data.frequencies
 
+        // 🔧 FIX: Guardar AMBOS formatos de timestamp
         trendData.value.push({
-          time:  new Date(data.timestamp).toLocaleTimeString('es-CO', {
+          time: new Date(data.timestamp).toLocaleTimeString('es-CO', {
             hour: '2-digit', minute: '2-digit'
           }),
+          timestamp: data.timestamp,  // 🔧 NUEVO: ISO completo para backend
           value: data.rms
         })
 
+        // Mantener últimos 30 puntos
         if (trendData.value.length > 30) trendData.value.shift()
       },
       (error) => console.error('WS error:', error)
@@ -70,21 +52,61 @@ export function useChartData(asset) {
     }
   }
 
+  // Refresh manual (usa mock solo si WS no está conectado)
   function refreshLive() {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      generateWaveform()
-      generateFFT()
+      console.warn(' WebSocket no conectado, usando datos mock')
+      waveformData.value = mockData.generateWaveform()
+      const { frequencies, fftData: mockFFT } = mockData.generateFFT()
+      fftFrequencies.value = frequencies
+      fftData.value = mockFFT
     }
   }
 
-  function initAll(assetId = null) {
-    generateWaveform()
-    generateFFT()
-    generateTrend()
-    if (assetId) connectWebSocket(assetId)
+  async function loadHistoricalTrend(assetId, hours = 24) {
+    try {
+      const response = await historyAPI.getTrend(assetId, hours)
+      
+      
+      const data = Array.isArray(response) ? response : response.data || []
+      
+      trendData.value = data.map(point => ({
+        time: new Date(point.timestamp).toLocaleTimeString('es-CO', {
+          hour: '2-digit', minute: '2-digit'
+        }),
+        timestamp: point.timestamp,  
+        value: point.rms
+      }))
+      
+      console.log(`✅ Cargados ${trendData.value.length} puntos de tendencia`)
+    } catch (e) {
+      console.warn('⚠️ No se pudo cargar tendencia histórica:', e.message)
+    
+      trendData.value = mockData.generateTrend()
+    }
   }
 
-  // ← NUEVO: FFT histórica en un timestamp dado
+  // Inicialización
+  async function initAll(assetId = null) {
+    // Inicializar con mock mientras carga
+    waveformData.value = mockData.generateWaveform()
+    const { frequencies, fftData: mockFFT } = mockData.generateFFT()
+    fftFrequencies.value = frequencies
+    fftData.value = mockFFT
+
+    if (assetId) {
+      // 🔧 NUEVO: Cargar tendencia histórica primero
+      await loadHistoricalTrend(assetId, 24)
+      
+      // Luego conectar WebSocket para datos en vivo
+      connectWebSocket(assetId)
+    } else {
+      // Sin assetId, usar mock
+      trendData.value = mockData.generateTrend()
+    }
+  }
+
+  // FFT histórica (datos reales del backend)
   async function fetchHistoricalFFT(assetId, timestamp) {
     try {
       const response = await historyAPI.getFFT(assetId, timestamp)
@@ -95,8 +117,8 @@ export function useChartData(asset) {
         timestamp:   response.timestamp,
       }
     } catch (e) {
-      console.warn('FFT histórica no disponible, usando FFT actual:', e.message)
-      // Fallback: retorna la FFT actual del WebSocket
+      console.warn('FFT histórica no disponible:', e.message)
+      // Fallback: retorna la FFT actual
       return {
         fftData:     fftData.value,
         frequencies: fftFrequencies.value,
@@ -107,8 +129,18 @@ export function useChartData(asset) {
   }
 
   return {
-    waveformData, fftData, fftFrequencies, trendData,
-    initAll, refreshLive, connectWebSocket, disconnectWebSocket,
-    fetchHistoricalFFT,  // ← NUEVO
+    // Estado
+    waveformData, 
+    fftData, 
+    fftFrequencies, 
+    trendData,
+    
+    // Métodos
+    initAll, 
+    refreshLive, 
+    connectWebSocket, 
+    disconnectWebSocket,
+    fetchHistoricalFFT,
+    loadHistoricalTrend, 
   }
 }

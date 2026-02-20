@@ -1,7 +1,7 @@
 <template>
-  <div class="table-row" :class="alarm.severity">
+  <div class="table-row" :class="alarm.active ? alarm.severity : 'resolved'">
     <div class="severity-cell">
-      <div class="severity-dot" :class="alarm.severity"></div>
+      <div class="severity-dot" :class="alarm.active ? alarm.severity : 'resolved'"></div>
       <span>{{ severityLabel[alarm.severity] }}</span>
     </div>
     <div class="asset-cell">
@@ -9,7 +9,9 @@
       <span class="asset-name-small">{{ alarm.assetName }}</span>
     </div>
     <div class="message-cell">{{ alarm.message }}</div>
-    <div class="rms-cell" :class="alarm.severity">{{ alarm.rmsValue }} mm/s</div>
+    <div class="rms-cell" :class="alarm.active ? alarm.severity : 'resolved'">
+      {{ Number(alarm.rmsValue).toFixed(2) }} mm/s
+    </div>
     <div class="date-cell">{{ formatDate(alarm.timestamp) }}</div>
     <div class="status-cell">
       <span v-if="alarm.active" class="active-badge">Activa</span>
@@ -33,28 +35,29 @@ const severityLabel = {
 <style scoped>
 .table-row {
   display: grid;
-  grid-template-columns: 130px 180px 1fr 120px 160px 100px;
+  grid-template-columns: 110px 160px minmax(200px, 1fr) 120px 160px 100px;
   padding: 14px 20px;
   border-top: 1px solid var(--color-surface2);
   align-items: center;
   transition: background 0.2s;
 }
 
-.table-row:hover {
-  background-color: rgba(255,255,255,0.03);
-}
+.table-row:hover { background-color: rgba(255,255,255,0.03); }
 
+/* Border izquierdo por estado */
 .table-row.critical { border-left: 3px solid var(--color-critical); }
 .table-row.warning  { border-left: 3px solid var(--color-warning); }
+.table-row.resolved { border-left: 3px solid var(--color-normal); }
 
 .severity-cell {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: var(--color-text);
+  color: var(--color-text-dark);
 }
 
+/* Dot de severidad */
 .severity-dot {
   width: 8px;
   height: 8px;
@@ -64,6 +67,7 @@ const severityLabel = {
 
 .severity-dot.critical { background-color: var(--color-critical); }
 .severity-dot.warning  { background-color: var(--color-warning); }
+.severity-dot.resolved { background-color: var(--color-normal); }
 
 .asset-cell {
   display: flex;
@@ -74,8 +78,12 @@ const severityLabel = {
 .asset-tag-small {
   font-size: 13px;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--color-text-dark);
   font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
 }
 
 .asset-name-small {
@@ -85,9 +93,10 @@ const severityLabel = {
 
 .message-cell {
   font-size: 13px;
-  color: var(--color-text);
+  color: var(--color-text-dark);
 }
 
+/* RMS color por estado */
 .rms-cell {
   font-size: 13px;
   font-weight: 600;
@@ -95,14 +104,16 @@ const severityLabel = {
 
 .rms-cell.critical { color: var(--color-critical); }
 .rms-cell.warning  { color: var(--color-warning); }
+.rms-cell.resolved { color: var(--color-normal); }
 
 .date-cell {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-dark);
 }
 
+/* Badges */
 .active-badge {
-  background-color: rgba(255,68,68,0.15);
+  background-color: rgba(255, 68, 68, 0.15);
   color: var(--color-critical);
   padding: 3px 10px;
   border-radius: 10px;
@@ -111,7 +122,7 @@ const severityLabel = {
 }
 
 .resolved-badge {
-  background-color: rgba(0,200,81,0.15);
+  background-color: rgba(0, 200, 81, 0.15);
   color: var(--color-normal);
   padding: 3px 10px;
   border-radius: 10px;

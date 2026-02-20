@@ -52,7 +52,7 @@ export const settingsAPI = {
   getProtocols:      ()        => http.get('/settings/protocols'),
   updateProtocols:   (data)    => http.post('/settings/protocols', data),
   getStatus:         ()        => http.get('/settings/status'),
-  updateAsset:       (id, data) => http.patch(`/settings/assets/${id}`, data),
+  updateAsset: (id, data)      => http.patch(`/assets/${id}`, data),
 }
 
 export const pchAPI = {

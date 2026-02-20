@@ -12,7 +12,7 @@
     <div class="asset-metrics">
       <AssetMetric
         label="RMS Actual"
-        :value="`${asset.rmsActual.toFixed(2)} mm/s`"
+        :value="formatRms(asset.rmsActual)"
         :highlight="asset.status"
       />
       <AssetMetric
@@ -46,7 +46,7 @@ import { useRouter } from 'vue-router'
 import BaseCard from '../common/BaseCard.vue'
 import StatusBadge from '../common/StatusBadge.vue'
 import AssetMetric from './AssetMetric.vue'
-import {MapPin } from 'lucide-vue-next';
+import { MapPin } from 'lucide-vue-next'
 
 const props = defineProps({
   asset: { type: Object, required: true }
@@ -58,8 +58,17 @@ function goToDetail() {
   router.push({ name: 'AssetDetail', params: { id: props.asset.id } })
 }
 
+function formatRms(value) {
+  if (value === null || value === undefined || isNaN(value)) {
+    return '-- mm/s'
+  }
+  return `${value.toFixed(2)} mm/s`
+}
+
 const barWidth = computed(() => {
-  const pct = (props.asset.rmsActual / props.asset.rmsLimit) * 100
+  const rms = props.asset.rmsActual || 0
+  const limit = props.asset.rmsLimit || 1
+  const pct = (rms / limit) * 100
   return Math.min(pct, 100)
 })
 </script>

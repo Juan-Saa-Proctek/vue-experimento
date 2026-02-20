@@ -7,12 +7,23 @@
         <RouterView />
       </main>
     </div>
+    <ToastContainer />
+    <ConfirmDialog ref="confirmDialog" />
   </div>
 </template>
 
 <script setup>
+import { ref, provide } from 'vue'
 import AppSidebar from './components/common/AppSidebar.vue'
 import AppHeader from './components/common/AppHeader.vue'
+import ToastContainer from './components/common/ToastContainer.vue'
+import ConfirmDialog from './components/common/ConfirmDialog.vue'
+
+const confirmDialog = ref(null)
+
+provide('confirm', async (opts) => {
+  return await confirmDialog.value.show(opts)
+})
 </script>
 
 <style scoped>

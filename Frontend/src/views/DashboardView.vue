@@ -9,7 +9,7 @@
       v-else-if="assetsStore.error"
       :message="assetsStore.error"
       retryable
-      @retry="assetsStore.fetchAssets"
+      @retry="loadData"
     />
 
     <!-- Contenido normal -->
@@ -50,11 +50,14 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useAssetsStore } from '../stores/assetsStore.js'
+import { useAlarmsStore } from '../stores/alarmsStore.js'
 import AssetCard from '../components/assets/AssetCard.vue'
 import LoadingSpinner from '../components/common/LoadingSpinner.vue'
 import ErrorState from '../components/common/ErrorState.vue'
 
 const assetsStore = useAssetsStore()
+const alarmsStore = useAlarmsStore()
+
 const filteredAssets = computed(() => assetsStore.filteredAssets)
 const filterStatus   = computed(() => assetsStore.filterStatus)
 
@@ -66,7 +69,15 @@ const summaryItems = computed(() => [
   { key: 'offline',  label: 'Desconectado', count: assetsStore.summary.offline,  color: 'var(--color-offline)' },
 ])
 
-onMounted(() => assetsStore.fetchAssets())
+// 🔧 FIX: Cargar assets Y alarmas juntos
+async function loadData() {
+  await Promise.all([
+    assetsStore.fetchAssets(),
+    alarmsStore.fetchAlarms(true) // true = solo activas
+  ])
+}
+
+onMounted(() => loadData())
 </script>
 
 <style scoped>

@@ -2,11 +2,11 @@
   <BaseCard clickable @click="goToDetail" class="asset-card" :class="asset.status">
 
     <div class="card-header">
-      <div class="asset-tag">{{ asset.tag }}</div>
+      <div class="asset-tag" :title="asset.tag">{{ asset.tag }}</div>
       <StatusBadge :status="asset.status" />
     </div>
 
-    <div class="asset-name">{{ asset.name }}</div>
+    <div class="asset-name" :title="asset.name">{{ asset.name }}</div>
     <div class="asset-type">{{ asset.type }}</div>
 
     <div class="asset-metrics">
@@ -34,7 +34,7 @@
     </div>
 
     <div class="card-footer">
-      <span class="location"><MapPin :size="14" />{{ asset.location }}</span>
+      <span class="location" :title="asset.location"><MapPin :size="14" />{{ asset.location }}</span>
     </div>
 
   </BaseCard>
@@ -65,12 +65,10 @@ const barWidth = computed(() => {
 </script>
 
 <style scoped>
-/* Le pasamos la clase al BaseCard mediante :class */
 .asset-card {
   background-color: var(--color-surface4) !important;
   border-left: 4px solid var(--color-offline);
 }
-
 .asset-card.normal   { border-left-color: var(--color-normal); }
 .asset-card.warning  { border-left-color: var(--color-warning); }
 .asset-card.critical { border-left-color: var(--color-critical); }
@@ -88,6 +86,10 @@ const barWidth = computed(() => {
   font-weight: 700;
   color: var(--color-text-dark);
   font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .asset-name {
@@ -95,6 +97,9 @@ const barWidth = computed(() => {
   font-weight: 600;
   color: var(--color-text-dark);
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .asset-type {
@@ -140,5 +145,9 @@ const barWidth = computed(() => {
   gap: 6px;
   font-size: 12px;
   color: var(--color-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 </style>

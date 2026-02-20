@@ -106,12 +106,16 @@ onMounted(() => fetchAssets())
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: hidden;
+  max-width: 100%;
+  min-width: 0; 
 }
 
 .threshold-header {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow: hidden;
 }
 
 .threshold-tag {
@@ -119,6 +123,9 @@ onMounted(() => fetchAssets())
   font-weight: 700;
   font-size: 16px;
   color: var(--color-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .threshold-type {
@@ -126,6 +133,9 @@ onMounted(() => fetchAssets())
   font-weight: 600;
   color: var(--color-text-dark);
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .field-group {

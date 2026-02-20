@@ -228,7 +228,10 @@ async function saveProtocols() {
   try {
     await settingsAPI.updateProtocols(config.value)
     saved.value = true
-    setTimeout(() => saved.value = false, 5000)
+    setTimeout(async () => {
+      await fetchProtocols()
+      saved.value = false
+    }, 2000)
   } catch (e) {
     error.value = e.message
   } finally {

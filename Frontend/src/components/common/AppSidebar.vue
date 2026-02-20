@@ -28,7 +28,7 @@
     <div class="sidebar-footer">
     <div class="system-status">
       <Wifi v-if="systemOnline" :size="20" color="var(--color-normal)" />
-      <WifiOff v-else :size="20" color="var(--color-offline)" />
+      <WifiOff v-else :size="20" color="var(--color-critical2)" />
       <span class="nav-label">{{ systemOnline ? 'Sistema En Linea' : 'Sin conexión' }}</span>
     </div>
     </div>
@@ -172,7 +172,7 @@ const toggleSidebar = () => {
   box-shadow: 0 0 6px var(--color-normal);
 }
 .status-dot.offline {
-  background-color: var(--color-offline);
+  background-color: var(--color-critical2);
 }
 .toggle-btn {
   margin-left: auto;

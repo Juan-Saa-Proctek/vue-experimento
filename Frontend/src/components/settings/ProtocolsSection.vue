@@ -303,7 +303,7 @@ onMounted(() => fetchProtocols())
 
 .protocol-badge.inactive {
   background-color: rgba(158,158,158,0.15);
-  color: var(--color-offline);
+  color: var(--color-critical);
 }
 
 .toggle {
